@@ -17753,6 +17753,145 @@ func (v *DictionaryValue) IsResourceKinded(interpreter *Interpreter) bool {
 	return *v.isResourceKinded
 }
 
+// RangeValue
+type RangeValue struct {
+	Type         RangeStaticType
+	semaType     *sema.RangeType
+	start        IntegerValue
+	endInclusive IntegerValue
+}
+
+func NewRangeValue(
+	interpreter *Interpreter,
+	locationRange LocationRange,
+	start IntegerValue,
+	endInclusive IntegerValue,
+	rangeType RangeStaticType,
+) *RangeValue {
+	return &RangeValue{
+		start:        start,
+		endInclusive: endInclusive,
+		Type:         rangeType,
+	}
+}
+
+var _ Value = &RangeValue{}
+var _ atree.Storable = &RangeValue{}
+var _ EquatableValue = &RangeValue{}
+var _ MemberAccessibleValue = &RangeValue{}
+
+func (*RangeValue) isValue() {}
+
+func (v *RangeValue) Accept(interpreter *Interpreter, visitor Visitor) {
+	descend := visitor.VisitRangeValue(interpreter, v)
+	if !descend {
+		return
+	}
+
+	v.Walk(interpreter, func(value Value) {
+		value.Accept(interpreter, visitor)
+	})
+}
+
+func (v *RangeValue) Walk(interpreter *Interpreter, walkChild func(Value)) {
+	// NO-OP
+}
+
+func (v *RangeValue) GetMember(interpreter *Interpreter, locationRange LocationRange, name string) Value {
+	return nil
+}
+
+func (*RangeValue) RemoveMember(_ *Interpreter, _ LocationRange, _ string) Value {
+	// Ranges have no removable members (fields / functions)
+	panic(errors.NewUnreachableError())
+}
+
+func (*RangeValue) SetMember(_ *Interpreter, _ LocationRange, _ string, _ Value) bool {
+	// Ranges have no settable members (fields / functions)
+	panic(errors.NewUnreachableError())
+}
+
+func (v *RangeValue) ConformsToStaticType(
+	_ *Interpreter,
+	_ LocationRange,
+	_ TypeConformanceResults,
+) bool {
+	return true
+}
+
+func (v *RangeValue) Storable(_ atree.SlabStorage, _ atree.Address, _ uint64) (atree.Storable, error) {
+	return v, nil
+}
+
+func (*RangeValue) NeedsStoreTo(_ atree.Address) bool {
+	return false
+}
+
+func (*RangeValue) IsResourceKinded(_ *Interpreter) bool {
+	return false
+}
+
+func (v *RangeValue) Transfer(
+	interpreter *Interpreter,
+	_ LocationRange,
+	_ atree.Address,
+	remove bool,
+	storable atree.Storable,
+) Value {
+	if remove {
+		interpreter.RemoveReferencedSlab(storable)
+	}
+	return v
+}
+
+func (v *RangeValue) Clone(_ *Interpreter) Value {
+	return v
+}
+
+func (*RangeValue) DeepRemove(_ *Interpreter) {
+	// NO-OP
+}
+
+func (v *RangeValue) ByteSize() uint32 {
+	return 0
+}
+
+func (v *RangeValue) StoredValue(_ atree.SlabStorage) (atree.Value, error) {
+	return v, nil
+}
+
+func (*RangeValue) ChildStorables() []atree.Storable {
+	return nil
+}
+
+func (r *RangeValue) String() string {
+	return r.RecursiveString(SeenReferences{})
+}
+
+func (*RangeValue) IsImportable(interpreter *Interpreter) bool {
+	panic("unimplemented IsImportable")
+}
+
+func (r *RangeValue) MeteredString(memoryGauge common.MemoryGauge, seenReferences SeenReferences) string {
+	return format.Range(r.start.String(), r.endInclusive.String())
+}
+
+func (r *RangeValue) RecursiveString(seenReferences SeenReferences) string {
+	return r.MeteredString(nil, seenReferences)
+}
+
+func (r *RangeValue) StaticType(interpreter *Interpreter) StaticType {
+	return r.Type
+}
+
+func (*RangeValue) Equal(interpreter *Interpreter, locationRange LocationRange, other Value) bool {
+	panic("unimplemented Equal")
+}
+
+func (*RangeValue) Encode(*atree.Encoder) error {
+	panic("unimplemented Encode")
+}
+
 // OptionalValue
 
 type OptionalValue interface {

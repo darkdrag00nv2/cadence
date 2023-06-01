@@ -45,6 +45,7 @@ const (
 	OperationMod
 	OperationNegate
 	OperationNilCoalesce
+	OperationCreateRange
 	OperationMove
 	OperationCast
 	OperationFailableCast
@@ -92,6 +93,8 @@ func (s Operation) Symbol() string {
 		return "!"
 	case OperationNilCoalesce:
 		return "??"
+	case OperationCreateRange:
+		return ".."
 	case OperationMove:
 		return "<-"
 	case OperationCast:
@@ -139,6 +142,9 @@ func (s Operation) Category() string {
 
 	case OperationNilCoalesce:
 		return "nil-coalescing"
+
+	case OperationCreateRange:
+		return "create-range"
 
 	case OperationMove:
 		return "move"

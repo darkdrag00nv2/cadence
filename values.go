@@ -1645,6 +1645,57 @@ func (v Dictionary) String() string {
 	return format.Dictionary(pairs)
 }
 
+// Range
+
+type Range struct {
+	RangeType    *RangeType
+	start        NumberValue
+	endInclusive NumberValue
+}
+
+var _ Value = Range{}
+
+func NewRange(start NumberValue, endInclusive NumberValue) Range {
+	return Range{start: start, endInclusive: endInclusive}
+}
+
+func NewMeteredRange(
+	gauge common.MemoryGauge,
+	start NumberValue,
+	endInclusive NumberValue,
+) Range {
+	common.UseMemory(gauge, common.CadenceRangeValueMemoryUsage)
+	return NewRange(start, endInclusive)
+}
+
+func (Range) isValue() {}
+
+func (v Range) Type() Type {
+	if v.RangeType == nil {
+		// Return nil Type instead of Type referencing nil *RangeType,
+		// so caller can check if v's type is nil and also prevent nil pointer dereference.
+		return nil
+	}
+	return v.RangeType
+}
+
+func (v Range) MeteredType(common.MemoryGauge) Type {
+	return v.Type()
+}
+
+func (v Range) WithType(rangeType *RangeType) Range {
+	v.RangeType = rangeType
+	return v
+}
+
+func (v Range) ToGoValue() any {
+	return nil
+}
+
+func (v Range) String() string {
+	return format.Range(v.start.String(), v.endInclusive.String())
+}
+
 // KeyValuePair
 
 type KeyValuePair struct {

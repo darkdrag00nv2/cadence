@@ -44,6 +44,9 @@ const (
 	// precedenceNilCoalescing is the precedence of
 	// - BinaryExpression, with OperationNilCoalesce. right associative!
 	precedenceNilCoalescing
+	// precedenceCreateRange is the precedence of
+	// - BinaryExpression, with OperationCreateRange.
+	precedenceCreateRange
 	// precedenceBitwiseOr is the precedence of
 	// - BinaryExpression, with OperationBitwiseOr
 	precedenceBitwiseOr

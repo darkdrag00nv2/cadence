@@ -37,6 +37,7 @@ const (
 	exprLeftBindingPowerLogicalAnd
 	exprLeftBindingPowerComparison
 	exprLeftBindingPowerNilCoalescing
+	exprLeftBindingPowerCreateRange
 	exprLeftBindingPowerBitwiseOr
 	exprLeftBindingPowerBitwiseXor
 	exprLeftBindingPowerBitwiseAnd
@@ -285,6 +286,12 @@ func init() {
 		tokenType:        lexer.TokenNotEqual,
 		leftBindingPower: exprLeftBindingPowerComparison,
 		operation:        ast.OperationNotEqual,
+	})
+
+	defineExpr(binaryExpr{
+		tokenType:        lexer.TokenDoubleDot,
+		leftBindingPower: exprLeftBindingPowerCreateRange,
+		operation:        ast.OperationCreateRange,
 	})
 
 	defineExpr(binaryExpr{

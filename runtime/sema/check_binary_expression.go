@@ -45,7 +45,7 @@ func (checker *Checker) VisitBinaryExpression(expression *ast.BinaryExpression) 
 	operation := expression.Operation
 	operationKind := binaryOperationKind(operation)
 
-	// Of all binary expressions, only arithmetic expressions require the
+	// Of all binary expressions, only arithmetic, bitwise & create range expressions require the
 	// rhsExpr and lhsExpr to be in the same type as the parent expression.
 	// i.e: `var x: Int8 = a + b`. Here both `a` and `b` needs to be of the type `Int8`.
 	//
@@ -60,7 +60,8 @@ func (checker *Checker) VisitBinaryExpression(expression *ast.BinaryExpression) 
 	var expectedType Type
 	switch operationKind {
 	case BinaryOperationKindArithmetic,
-		BinaryOperationKindBitwise:
+		BinaryOperationKindBitwise,
+		BinaryOperationKindCreateRange:
 		expectedType = UnwrapOptionalType(checker.expectedType)
 	}
 
@@ -83,6 +84,7 @@ func (checker *Checker) VisitBinaryExpression(expression *ast.BinaryExpression) 
 	case BinaryOperationKindArithmetic,
 		BinaryOperationKindNonEqualityComparison,
 		BinaryOperationKindEquality,
+		BinaryOperationKindCreateRange,
 		BinaryOperationKindBitwise:
 
 		// Right hand side will always be evaluated
@@ -131,9 +133,10 @@ func (checker *Checker) VisitBinaryExpression(expression *ast.BinaryExpression) 
 
 		switch operationKind {
 		case BinaryOperationKindArithmetic,
-			BinaryOperationKindBitwise:
+			BinaryOperationKindBitwise,
+			BinaryOperationKindCreateRange:
 
-			resultType = checker.checkBinaryExpressionArithmeticOrBitwise(
+			resultType = checker.checkBinaryExpressionArithmeticOrBitwiseOrCreateRange(
 				expression, operation, operationKind,
 				leftType, rightType,
 				leftIsInvalid, rightIsInvalid, anyInvalid,
@@ -206,7 +209,7 @@ func (checker *Checker) VisitBinaryExpression(expression *ast.BinaryExpression) 
 	}
 }
 
-func (checker *Checker) checkBinaryExpressionArithmeticOrBitwise(
+func (checker *Checker) checkBinaryExpressionArithmeticOrBitwiseOrCreateRange(
 	expression *ast.BinaryExpression,
 	operation ast.Operation,
 	operationKind BinaryOperationKind,
@@ -221,7 +224,8 @@ func (checker *Checker) checkBinaryExpressionArithmeticOrBitwise(
 	case BinaryOperationKindArithmetic:
 		expectedSuperType = NumberType
 
-	case BinaryOperationKindBitwise:
+	case BinaryOperationKindBitwise,
+		BinaryOperationKindCreateRange:
 		expectedSuperType = IntegerType
 
 	default:
@@ -297,7 +301,17 @@ func (checker *Checker) checkBinaryExpressionArithmeticOrBitwise(
 		)
 	}
 
-	return leftType
+	switch operationKind {
+	case BinaryOperationKindArithmetic,
+		BinaryOperationKindBitwise:
+		return leftType
+
+	case BinaryOperationKindCreateRange:
+		return &RangeType{MemberType: leftType}
+
+	default:
+		panic(errors.NewUnreachableError())
+	}
 }
 
 func (checker *Checker) checkBinaryExpressionNonEquality(

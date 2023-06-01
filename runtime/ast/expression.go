@@ -1317,6 +1317,8 @@ func (e *BinaryExpression) precedence() precedence {
 		return precedenceComparison
 	case OperationNilCoalesce:
 		return precedenceNilCoalescing
+	case OperationCreateRange:
+		return precedenceCreateRange
 	case OperationBitwiseOr:
 		return precedenceBitwiseOr
 	case OperationBitwiseXor:

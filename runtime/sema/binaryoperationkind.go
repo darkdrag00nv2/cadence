@@ -34,6 +34,7 @@ const (
 	BinaryOperationKindBooleanLogic
 	BinaryOperationKindEquality
 	BinaryOperationKindNilCoalescing
+	BinaryOperationKindCreateRange
 	BinaryOperationKindBitwise
 )
 
@@ -66,6 +67,9 @@ func binaryOperationKind(operation ast.Operation) BinaryOperationKind {
 
 	case ast.OperationNilCoalesce:
 		return BinaryOperationKindNilCoalescing
+
+	case ast.OperationCreateRange:
+		return BinaryOperationKindCreateRange
 
 	case ast.OperationBitwiseOr,
 		ast.OperationBitwiseXor,

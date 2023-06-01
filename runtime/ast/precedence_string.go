@@ -14,22 +14,23 @@ func _() {
 	_ = x[precedenceLogicalAnd-3]
 	_ = x[precedenceComparison-4]
 	_ = x[precedenceNilCoalescing-5]
-	_ = x[precedenceBitwiseOr-6]
-	_ = x[precedenceBitwiseXor-7]
-	_ = x[precedenceBitwiseAnd-8]
-	_ = x[precedenceBitwiseShift-9]
-	_ = x[precedenceAddition-10]
-	_ = x[precedenceMultiplication-11]
-	_ = x[precedenceCasting-12]
-	_ = x[precedenceUnaryPrefix-13]
-	_ = x[precedenceUnaryPostfix-14]
-	_ = x[precedenceAccess-15]
-	_ = x[precedenceLiteral-16]
+	_ = x[precedenceCreateRange-6]
+	_ = x[precedenceBitwiseOr-7]
+	_ = x[precedenceBitwiseXor-8]
+	_ = x[precedenceBitwiseAnd-9]
+	_ = x[precedenceBitwiseShift-10]
+	_ = x[precedenceAddition-11]
+	_ = x[precedenceMultiplication-12]
+	_ = x[precedenceCasting-13]
+	_ = x[precedenceUnaryPrefix-14]
+	_ = x[precedenceUnaryPostfix-15]
+	_ = x[precedenceAccess-16]
+	_ = x[precedenceLiteral-17]
 }
 
-const _precedence_name = "precedenceUnknownprecedenceTernaryprecedenceLogicalOrprecedenceLogicalAndprecedenceComparisonprecedenceNilCoalescingprecedenceBitwiseOrprecedenceBitwiseXorprecedenceBitwiseAndprecedenceBitwiseShiftprecedenceAdditionprecedenceMultiplicationprecedenceCastingprecedenceUnaryPrefixprecedenceUnaryPostfixprecedenceAccessprecedenceLiteral"
+const _precedence_name = "precedenceUnknownprecedenceTernaryprecedenceLogicalOrprecedenceLogicalAndprecedenceComparisonprecedenceNilCoalescingprecedenceCreateRangeprecedenceBitwiseOrprecedenceBitwiseXorprecedenceBitwiseAndprecedenceBitwiseShiftprecedenceAdditionprecedenceMultiplicationprecedenceCastingprecedenceUnaryPrefixprecedenceUnaryPostfixprecedenceAccessprecedenceLiteral"
 
-var _precedence_index = [...]uint16{0, 17, 34, 53, 73, 93, 116, 135, 155, 175, 197, 215, 239, 256, 277, 299, 315, 332}
+var _precedence_index = [...]uint16{0, 17, 34, 53, 73, 93, 116, 137, 156, 176, 196, 218, 236, 260, 277, 298, 320, 336, 353}
 
 func (i precedence) String() string {
 	if i >= precedence(len(_precedence_index)-1) {

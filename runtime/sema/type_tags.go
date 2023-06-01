@@ -224,6 +224,8 @@ const (
 	interfaceTypeMask
 	functionTypeMask
 
+	rangeTypeMask
+
 	invalidTypeMask
 )
 
@@ -330,6 +332,7 @@ var (
 	ConstantSizedTypeTag = newTypeTagFromLowerMask(constantSizedTypeMask)
 	VariableSizedTypeTag = newTypeTagFromLowerMask(variableSizedTypeMask)
 	DictionaryTypeTag    = newTypeTagFromLowerMask(dictionaryTypeMask)
+	RangeTypeTag         = newTypeTagFromUpperMask(rangeTypeMask)
 	CompositeTypeTag     = newTypeTagFromLowerMask(compositeTypeMask)
 	ReferenceTypeTag     = newTypeTagFromLowerMask(referenceTypeMask)
 	GenericTypeTag       = newTypeTagFromLowerMask(genericTypeMask)

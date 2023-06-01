@@ -230,6 +230,53 @@ func (t VariableSizedStaticType) Equal(other StaticType) bool {
 	return t.Type.Equal(otherVariableSizedType.Type)
 }
 
+// RangeStaticType
+
+type RangeStaticType struct {
+	ElementType StaticType
+}
+
+var _ StaticType = RangeStaticType{}
+var _ atree.TypeInfo = RangeStaticType{}
+
+func NewRangeStaticType(
+	memoryGauge common.MemoryGauge,
+	elementType StaticType,
+) RangeStaticType {
+	common.UseMemory(memoryGauge, common.RangeStaticTypeMemoryUsage)
+
+	return RangeStaticType{
+		ElementType: elementType,
+	}
+}
+
+func (RangeStaticType) isStaticType() {}
+
+func (RangeStaticType) elementSize() uint {
+	return UnknownElementSize
+}
+
+func (t RangeStaticType) String() string {
+	return fmt.Sprintf("Range<%s>", t.ElementType)
+}
+
+func (t RangeStaticType) MeteredString(memoryGauge common.MemoryGauge) string {
+	common.UseMemory(memoryGauge, common.RangeStaticTypeStringMemoryUsage)
+
+	elementStr := t.ElementType.MeteredString(memoryGauge)
+
+	return fmt.Sprintf("Range<%s>", elementStr)
+}
+
+func (t RangeStaticType) Equal(other StaticType) bool {
+	otherRangeType, ok := other.(RangeStaticType)
+	if !ok {
+		return false
+	}
+
+	return t.ElementType.Equal(otherRangeType.ElementType)
+}
+
 // ConstantSizedStaticType
 
 type ConstantSizedStaticType struct {
@@ -767,6 +814,17 @@ func ConvertStaticToSemaType(
 			memoryGauge,
 			keyType,
 			valueType,
+		), nil
+
+	case RangeStaticType:
+		elementType, err := ConvertStaticToSemaType(memoryGauge, t.ElementType, getInterface, getComposite)
+		if err != nil {
+			return nil, err
+		}
+
+		return sema.NewRangeType(
+			memoryGauge,
+			elementType,
 		), nil
 
 	case OptionalStaticType:
