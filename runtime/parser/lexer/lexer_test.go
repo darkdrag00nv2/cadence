@@ -608,6 +608,79 @@ func TestLexBasic(t *testing.T) {
 		)
 	})
 
+	t.Run("range", func(t *testing.T) {
+		testLex(t,
+			"1 .. 2",
+			[]token{
+				{
+					Token: Token{
+						Type: TokenDecimalIntegerLiteral,
+						Range: ast.Range{
+							StartPos: ast.Position{Line: 1, Column: 0, Offset: 0},
+							EndPos:   ast.Position{Line: 1, Column: 0, Offset: 0},
+						},
+					},
+					Source: "1",
+				},
+				{
+					Token: Token{
+						Type: TokenSpace,
+						SpaceOrError: Space{
+							ContainsNewline: false,
+						},
+						Range: ast.Range{
+							StartPos: ast.Position{Line: 1, Column: 1, Offset: 1},
+							EndPos:   ast.Position{Line: 1, Column: 1, Offset: 1},
+						},
+					},
+					Source: " ",
+				},
+				{
+					Token: Token{
+						Type: TokenDoubleDot,
+						Range: ast.Range{
+							StartPos: ast.Position{Line: 1, Column: 2, Offset: 2},
+							EndPos:   ast.Position{Line: 1, Column: 3, Offset: 3},
+						},
+					},
+					Source: "..",
+				},
+				{
+					Token: Token{
+						Type: TokenSpace,
+						SpaceOrError: Space{
+							ContainsNewline: false,
+						},
+						Range: ast.Range{
+							StartPos: ast.Position{Line: 1, Column: 4, Offset: 4},
+							EndPos:   ast.Position{Line: 1, Column: 4, Offset: 4},
+						},
+					},
+					Source: " ",
+				},
+				{
+					Token: Token{
+						Type: TokenDecimalIntegerLiteral,
+						Range: ast.Range{
+							StartPos: ast.Position{Line: 1, Column: 5, Offset: 5},
+							EndPos:   ast.Position{Line: 1, Column: 5, Offset: 5},
+						},
+					},
+					Source: "2",
+				},
+				{
+					Token: Token{
+						Type: TokenEOF,
+						Range: ast.Range{
+							StartPos: ast.Position{Line: 1, Column: 6, Offset: 6},
+							EndPos:   ast.Position{Line: 1, Column: 6, Offset: 6},
+						},
+					},
+				},
+			},
+		)
+	})
+
 	t.Run("identifier", func(t *testing.T) {
 		testLex(t,
 			"test",

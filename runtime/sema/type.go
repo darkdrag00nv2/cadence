@@ -4987,6 +4987,151 @@ func (t *DictionaryType) Resolve(typeArguments *TypeParameterTypeOrderedMap) Typ
 	}
 }
 
+// RangeType todo.
+
+type RangeType struct {
+	MemberType          Type
+	memberResolvers     map[string]MemberResolver
+	memberResolversOnce sync.Once
+}
+
+var _ Type = &RangeType{}
+
+func NewRangeType(memoryGauge common.MemoryGauge, elementType Type) *RangeType {
+	common.UseMemory(memoryGauge, common.DictionarySemaTypeMemoryUsage)
+	return &RangeType{
+		MemberType: elementType,
+	}
+}
+
+func (*RangeType) IsType() {}
+
+func (t *RangeType) Tag() TypeTag {
+	return RangeTypeTag
+}
+
+func (t *RangeType) String() string {
+	return fmt.Sprintf(
+		"Range<%s>",
+		t.MemberType,
+	)
+}
+
+func (t *RangeType) QualifiedString() string {
+	return fmt.Sprintf(
+		"Range<%s>",
+		t.MemberType.QualifiedString(),
+	)
+}
+
+func (t *RangeType) ID() TypeID {
+	return TypeID(fmt.Sprintf(
+		"Range<%s>",
+		t.MemberType.ID(),
+	))
+}
+
+func (t *RangeType) Equal(other Type) bool {
+	otherRange, ok := other.(*RangeType)
+	if !ok {
+		return false
+	}
+
+	return otherRange.MemberType.Equal(t.MemberType)
+}
+
+func (t *RangeType) IsResourceType() bool {
+	return t.MemberType.IsResourceType()
+}
+
+func (t *RangeType) IsInvalidType() bool {
+	return t.MemberType.IsInvalidType()
+}
+
+func (t *RangeType) IsStorable(results map[*Member]bool) bool {
+	return t.MemberType.IsStorable(results)
+}
+
+func (t *RangeType) IsExportable(results map[*Member]bool) bool {
+	return t.MemberType.IsExportable(results)
+}
+
+func (t *RangeType) IsImportable(results map[*Member]bool) bool {
+	return t.MemberType.IsImportable(results)
+}
+
+func (t *RangeType) IsEquatable() bool {
+	return t.MemberType.IsEquatable()
+}
+
+func (*RangeType) IsComparable() bool {
+	return false
+}
+
+func (t *RangeType) TypeAnnotationState() TypeAnnotationState {
+	elementTypeAnnotationState := t.MemberType.TypeAnnotationState()
+	if elementTypeAnnotationState != TypeAnnotationStateValid {
+		return elementTypeAnnotationState
+	}
+
+	return TypeAnnotationStateValid
+}
+
+func (t *RangeType) RewriteWithRestrictedTypes() (Type, bool) {
+	rewrittenElementType, elementTypeRewritten := t.MemberType.RewriteWithRestrictedTypes()
+	if elementTypeRewritten {
+		return &RangeType{
+			MemberType: rewrittenElementType,
+		}, true
+	} else {
+		return t, false
+	}
+}
+
+func (t *RangeType) GetMembers() map[string]MemberResolver {
+	t.initializeMemberResolvers()
+	return t.memberResolvers
+}
+
+func (t *RangeType) initializeMemberResolvers() {
+	t.memberResolversOnce.Do(func() {
+		t.memberResolvers = withBuiltinMembers(t, map[string]MemberResolver{})
+	})
+}
+
+func (t *RangeType) ElementType(_ bool) Type {
+	return &OptionalType{Type: t.MemberType}
+}
+
+func (*RangeType) AllowsValueIndexingAssignment() bool {
+	return false
+}
+
+func (t *RangeType) Unify(
+	other Type,
+	typeParameters *TypeParameterTypeOrderedMap,
+	report func(err error),
+	outerRange ast.Range,
+) bool {
+	otherRange, ok := other.(*RangeType)
+	if !ok {
+		return false
+	}
+
+	return t.MemberType.Unify(otherRange.MemberType, typeParameters, report, outerRange)
+}
+
+func (t *RangeType) Resolve(typeArguments *TypeParameterTypeOrderedMap) Type {
+	memberType := t.MemberType.Resolve(typeArguments)
+	if memberType == nil {
+		return nil
+	}
+
+	return &RangeType{
+		MemberType: memberType,
+	}
+}
+
 // ReferenceType represents the reference to a value
 type ReferenceType struct {
 	Type       Type

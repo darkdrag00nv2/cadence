@@ -1058,6 +1058,52 @@ func (t *DictionaryType) Equal(other Type) bool {
 		t.ElementType.Equal(otherType.ElementType)
 }
 
+// RangeType
+
+type RangeType struct {
+	ElementType Type
+	typeID      string
+}
+
+var _ Type = &RangeType{}
+
+func NewRangeType(
+	elementType Type,
+) *RangeType {
+	return &RangeType{
+		ElementType: elementType,
+	}
+}
+
+func NewMeteredRangeType(
+	gauge common.MemoryGauge,
+	elementType Type,
+) *RangeType {
+	common.UseMemory(gauge, common.CadenceRangeTypeMemoryUsage)
+	return NewRangeType(elementType)
+}
+
+func (*RangeType) isType() {}
+
+func (t *RangeType) ID() string {
+	if len(t.typeID) == 0 {
+		t.typeID = fmt.Sprintf(
+			"Range<%s>",
+			t.ElementType.ID(),
+		)
+	}
+	return t.typeID
+}
+
+func (t *RangeType) Equal(other Type) bool {
+	otherType, ok := other.(*RangeType)
+	if !ok {
+		return false
+	}
+
+	return t.ElementType.Equal(otherType.ElementType)
+}
+
 // Field
 
 type Field struct {

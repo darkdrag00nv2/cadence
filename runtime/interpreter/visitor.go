@@ -50,6 +50,7 @@ type Visitor interface {
 	VisitUFix64Value(interpreter *Interpreter, value UFix64Value)
 	VisitCompositeValue(interpreter *Interpreter, value *CompositeValue) bool
 	VisitDictionaryValue(interpreter *Interpreter, value *DictionaryValue) bool
+	VisitRangeValue(interpreter *Interpreter, value *RangeValue) bool
 	VisitNilValue(interpreter *Interpreter, value NilValue)
 	VisitSomeValue(interpreter *Interpreter, value *SomeValue) bool
 	VisitStorageReferenceValue(interpreter *Interpreter, value *StorageReferenceValue)
@@ -118,6 +119,7 @@ type EmptyVisitor struct {
 	BoundFunctionValueVisitor               func(interpreter *Interpreter, value BoundFunctionValue)
 	StorageCapabilityControllerValueVisitor func(interpreter *Interpreter, value *StorageCapabilityControllerValue)
 	AccountCapabilityControllerValueVisitor func(interpreter *Interpreter, value *AccountCapabilityControllerValue)
+	RangeValueVisitor                       func(interpreter *Interpreter, value *RangeValue) bool
 }
 
 var _ Visitor = &EmptyVisitor{}
@@ -337,6 +339,13 @@ func (v EmptyVisitor) VisitDictionaryValue(interpreter *Interpreter, value *Dict
 		return true
 	}
 	return v.DictionaryValueVisitor(interpreter, value)
+}
+
+func (v EmptyVisitor) VisitRangeValue(interpreter *Interpreter, value *RangeValue) bool {
+	if v.RangeValueVisitor == nil {
+		return true
+	}
+	return v.RangeValueVisitor(interpreter, value)
 }
 
 func (v EmptyVisitor) VisitNilValue(interpreter *Interpreter, value NilValue) {

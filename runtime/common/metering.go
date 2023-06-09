@@ -165,6 +165,7 @@ var (
 	VariableSizedStaticTypeMemoryUsage = NewConstantMemoryUsage(MemoryKindVariableSizedStaticType)
 	ConstantSizedStaticTypeMemoryUsage = NewConstantMemoryUsage(MemoryKindConstantSizedStaticType)
 	DictionaryStaticTypeMemoryUsage    = NewConstantMemoryUsage(MemoryKindDictionaryStaticType)
+	RangeStaticTypeMemoryUsage         = NewConstantMemoryUsage(MemoryKindRangeStaticType)
 	OptionalStaticTypeMemoryUsage      = NewConstantMemoryUsage(MemoryKindOptionalStaticType)
 	RestrictedStaticTypeMemoryUsage    = NewConstantMemoryUsage(MemoryKindRestrictedStaticType)
 	ReferenceStaticTypeMemoryUsage     = NewConstantMemoryUsage(MemoryKindReferenceStaticType)
@@ -191,6 +192,7 @@ var (
 	// Cadence external values
 
 	CadenceDictionaryValueMemoryUsage     = NewConstantMemoryUsage(MemoryKindCadenceDictionaryValue)
+	CadenceRangeValueMemoryUsage          = NewConstantMemoryUsage(MemoryKindCadenceRangeValue)
 	CadenceArrayValueBaseMemoryUsage      = NewConstantMemoryUsage(MemoryKindCadenceArrayValueBase)
 	CadenceStructValueBaseMemoryUsage     = NewConstantMemoryUsage(MemoryKindCadenceStructValueBase)
 	CadenceResourceValueBaseMemoryUsage   = NewConstantMemoryUsage(MemoryKindCadenceResourceValueBase)
@@ -219,6 +221,7 @@ var (
 	CadenceContractInterfaceTypeMemoryUsage  = NewConstantMemoryUsage(MemoryKindCadenceContractInterfaceType)
 	CadenceContractTypeMemoryUsage           = NewConstantMemoryUsage(MemoryKindCadenceContractType)
 	CadenceDictionaryTypeMemoryUsage         = NewConstantMemoryUsage(MemoryKindCadenceDictionaryType)
+	CadenceRangeTypeMemoryUsage              = NewConstantMemoryUsage(MemoryKindCadenceRangeType)
 	CadenceEnumTypeMemoryUsage               = NewConstantMemoryUsage(MemoryKindCadenceEnumType)
 	CadenceEventTypeMemoryUsage              = NewConstantMemoryUsage(MemoryKindCadenceEventType)
 	CadenceFunctionTypeMemoryUsage           = NewConstantMemoryUsage(MemoryKindCadenceFunctionType)
@@ -266,6 +269,7 @@ var (
 
 	VariableSizedStaticTypeStringMemoryUsage = NewRawStringMemoryUsage(2)  // []
 	DictionaryStaticTypeStringMemoryUsage    = NewRawStringMemoryUsage(4)  // {: }
+	RangeStaticTypeStringMemoryUsage         = NewRawStringMemoryUsage(7)  // Range<>
 	OptionalStaticTypeStringMemoryUsage      = NewRawStringMemoryUsage(1)  // ?
 	AuthReferenceStaticTypeStringMemoryUsage = NewRawStringMemoryUsage(5)  // auth&
 	ReferenceStaticTypeStringMemoryUsage     = NewRawStringMemoryUsage(1)  // &
