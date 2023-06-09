@@ -19,14 +19,78 @@
 package interpreter_test
 
 import (
+	"fmt"
 	"testing"
+
+	"github.com/onflow/cadence/runtime/activations"
+	"github.com/onflow/cadence/runtime/interpreter"
+	"github.com/onflow/cadence/runtime/sema"
+	"github.com/onflow/cadence/runtime/stdlib"
+	"github.com/stretchr/testify/require"
 )
 
-func TestRangeDeclaration(t *testing.T) {
-
+func TestRange(t *testing.T) {
 	t.Parallel()
 
-	_ = parseCheckAndInterpret(t, `
-		let a = 1 .. 10
-	`)
+	baseValueActivation := sema.NewVariableActivation(sema.BaseValueActivation)
+	baseValueActivation.DeclareValue(stdlib.RangeConstructorFunction)
+
+	baseActivation := activations.NewActivation(nil, interpreter.BaseActivation)
+	interpreter.Declare(baseActivation, stdlib.RangeConstructorFunction)
+
+	runValidCase := func(t *testing.T, memberType sema.Type, withStep bool) {
+		t.Run(memberType.String(), func(t *testing.T) {
+			t.Parallel()
+
+			var code string
+			if withStep {
+				code = fmt.Sprintf(
+					`
+					   let s : %s = 10
+					   let e : %s = 20
+					   let step : %s = 2
+					   let r = Range(s, e, step: step)
+					`,
+					memberType.String(), memberType.String(), memberType.String())
+			} else {
+				code = fmt.Sprintf(
+					`
+					   let s : %s = 10
+					   let e : %s = 20
+					   let r = Range(s, e)
+					`,
+					memberType.String(), memberType.String())
+			}
+
+			_, err := parseCheckAndInterpretWithOptions(t, code,
+				ParseCheckAndInterpretOptions{
+					CheckerConfig: &sema.Config{
+						BaseValueActivation: baseValueActivation,
+					},
+					Config: &interpreter.Config{
+						BaseActivation: baseActivation,
+					},
+				},
+			)
+
+			require.NoError(t, err)
+		})
+	}
+
+	runValidCaseWithoutStep := func(t *testing.T, memberType sema.Type) {
+		runValidCase(t, memberType, false)
+	}
+	runValidCaseWithStep := func(t *testing.T, memberType sema.Type) {
+		runValidCase(t, memberType, true)
+	}
+
+	for _, integerType := range sema.AllIntegerTypes {
+		switch integerType {
+		case sema.IntegerType, sema.SignedIntegerType:
+			continue
+		}
+
+		runValidCaseWithStep(t, integerType)
+		runValidCaseWithoutStep(t, integerType)
+	}
 }

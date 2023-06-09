@@ -553,39 +553,6 @@ func (interpreter *Interpreter) testComparison(left, right Value, expression *as
 	}
 }
 
-func (interpreter *Interpreter) createRange(left, right IntegerValue, expression *ast.BinaryExpression) *RangeValue {
-	locationRange := LocationRange{
-		Location:    interpreter.Location,
-		HasPosition: expression,
-	}
-
-	leftComparable, leftOk := left.(ComparableValue)
-	rightComparable, rightOk := right.(ComparableValue)
-
-	if !leftOk || !rightOk {
-		panic(errors.NewUnreachableError())
-	}
-
-	leftStaticType := left.StaticType(interpreter)
-	rightStaticType := right.StaticType(interpreter)
-	if leftStaticType != rightStaticType {
-		// Checker would only allow same type on both sides of the create range expression.
-		panic(errors.NewUnreachableError())
-	}
-
-	if leftComparable.Greater(interpreter, rightComparable, locationRange) {
-		panic(InvalidOperandsError{
-			Operation:     expression.Operation,
-			LeftType:      leftStaticType,
-			RightType:     rightStaticType,
-			LocationRange: locationRange,
-		})
-	}
-
-	rangeStaticType := RangeStaticType{ElementType: leftStaticType}
-	return NewRangeValue(interpreter, locationRange, left, right, rangeStaticType)
-}
-
 func (interpreter *Interpreter) VisitUnaryExpression(expression *ast.UnaryExpression) Value {
 	value := interpreter.evalExpression(expression.Expression)
 

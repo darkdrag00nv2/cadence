@@ -19,18 +19,77 @@
 package checker
 
 import (
+	"fmt"
 	"testing"
 
+	"github.com/onflow/cadence/runtime/sema"
+	"github.com/onflow/cadence/runtime/stdlib"
 	"github.com/stretchr/testify/require"
 )
 
-func TestRangeDeclaration(t *testing.T) {
-
+func TestRange(t *testing.T) {
 	t.Parallel()
 
-	_, err := ParseAndCheck(t, `
-	   let a = 1 .. 10
-	 `)
+	baseValueActivation := sema.NewVariableActivation(sema.BaseValueActivation)
+	baseValueActivation.DeclareValue(stdlib.RangeConstructorFunction)
 
-	require.NoError(t, err)
+	runValidCase := func(t *testing.T, memberType sema.Type, withStep bool) {
+		t.Run(memberType.String(), func(t *testing.T) {
+			t.Parallel()
+
+			var code string
+			if withStep {
+				code = fmt.Sprintf(
+					`
+					   let s : %s = 10
+					   let e : %s = 20
+					   let step : %s = 2
+					   let r = Range(s, e, step: step)
+					`,
+					memberType.String(), memberType.String(), memberType.String())
+			} else {
+				code = fmt.Sprintf(
+					`
+					   let s : %s = 10
+					   let e : %s = 20
+					   let r = Range(s, e)
+					`,
+					memberType.String(), memberType.String())
+			}
+
+			checker, err := ParseAndCheckWithOptions(t, code,
+				ParseAndCheckOptions{
+					Config: &sema.Config{
+						BaseValueActivation: baseValueActivation,
+					},
+				},
+			)
+
+			require.NoError(t, err)
+			resType := RequireGlobalValue(t, checker.Elaboration, "r")
+			require.Equal(t,
+				&sema.RangeType{
+					MemberType: memberType,
+				},
+				resType,
+			)
+		})
+	}
+
+	runValidCaseWithoutStep := func(t *testing.T, memberType sema.Type) {
+		runValidCase(t, memberType, false)
+	}
+	runValidCaseWithStep := func(t *testing.T, memberType sema.Type) {
+		runValidCase(t, memberType, true)
+	}
+
+	for _, integerType := range sema.AllIntegerTypes {
+		switch integerType {
+		case sema.IntegerType, sema.SignedIntegerType:
+			continue
+		}
+
+		runValidCaseWithStep(t, integerType)
+		runValidCaseWithoutStep(t, integerType)
+	}
 }

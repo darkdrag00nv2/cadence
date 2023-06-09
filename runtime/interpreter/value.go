@@ -17817,6 +17817,7 @@ type RangeValue struct {
 	semaType     *sema.RangeType
 	start        IntegerValue
 	endInclusive IntegerValue
+	step         IntegerValue
 }
 
 func NewRangeValue(
@@ -17826,9 +17827,37 @@ func NewRangeValue(
 	endInclusive IntegerValue,
 	rangeType RangeStaticType,
 ) *RangeValue {
+	startComparable, startOk := start.(ComparableValue)
+	endInclusiveComparable, endInclusiveOk := endInclusive.(ComparableValue)
+	if !startOk || !endInclusiveOk {
+		panic(errors.NewUnreachableError())
+	}
+
+	if startComparable.GreaterEqual(interpreter, endInclusiveComparable, locationRange) {
+		// stepValue should be 1
+	} else {
+		// stepValue should be -1
+	}
+
 	return &RangeValue{
 		start:        start,
 		endInclusive: endInclusive,
+		Type:         rangeType,
+	}
+}
+
+func NewRangeValueWithStep(
+	interpreter *Interpreter,
+	locationRange LocationRange,
+	start IntegerValue,
+	endInclusive IntegerValue,
+	step IntegerValue,
+	rangeType RangeStaticType,
+) *RangeValue {
+	return &RangeValue{
+		start:        start,
+		endInclusive: endInclusive,
+		step:         step,
 		Type:         rangeType,
 	}
 }

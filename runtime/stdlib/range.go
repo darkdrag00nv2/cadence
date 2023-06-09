@@ -81,7 +81,35 @@ var RangeConstructorFunction = NewStandardLibraryFunction(
 	rangeConstructorFunctionType,
 	rangeConstructorFunctionDocString,
 	func(invocation interpreter.Invocation) interpreter.Value {
-		panic("TODO")
+		start, startOk := invocation.Arguments[0].(interpreter.IntegerValue)
+		endInclusive, endInclusiveOk := invocation.Arguments[1].(interpreter.IntegerValue)
+
+		if !startOk || !endInclusiveOk {
+			panic(errors.NewUnreachableError())
+		}
+
+		inter := invocation.Interpreter
+		locationRange := invocation.LocationRange
+
+		leftStaticType := start.StaticType(inter)
+		rightStaticType := endInclusive.StaticType(inter)
+		if leftStaticType != rightStaticType {
+			// Checker would only allow same type for both start & endInclusive.
+			panic(errors.NewUnreachableError())
+		}
+
+		rangeStaticType := interpreter.RangeStaticType{ElementType: leftStaticType}
+
+		if len(invocation.Arguments) > 2 {
+			step, ok := invocation.Arguments[2].(interpreter.IntegerValue)
+			if !ok {
+				panic(errors.NewUnreachableError())
+			}
+
+			return interpreter.NewRangeValueWithStep(inter, locationRange, start, endInclusive, step, rangeStaticType)
+		} else {
+			return interpreter.NewRangeValue(inter, locationRange, start, endInclusive, rangeStaticType)
+		}
 	},
 )
 
