@@ -17811,10 +17811,61 @@ func (v *DictionaryValue) IsResourceKinded(interpreter *Interpreter) bool {
 	return *v.isResourceKinded
 }
 
+// Get the provided int64 value in the required staticType.
+// Note: Assumes that the provided value fits within the constraints of the staticType.
+func getValueForIntegerType(value int64, staticType StaticType) IntegerValue {
+	switch staticType {
+	case PrimitiveStaticTypeInt:
+		return NewUnmeteredIntValueFromInt64(value)
+	case PrimitiveStaticTypeInt8:
+		return NewUnmeteredInt8Value(int8(value))
+	case PrimitiveStaticTypeInt16:
+		return NewUnmeteredInt16Value(int16(value))
+	case PrimitiveStaticTypeInt32:
+		return NewUnmeteredInt32Value(int32(value))
+	case PrimitiveStaticTypeInt64:
+		return NewUnmeteredInt64Value(value)
+	case PrimitiveStaticTypeInt128:
+		return NewUnmeteredInt128ValueFromInt64(value)
+	case PrimitiveStaticTypeInt256:
+		return NewUnmeteredInt256ValueFromInt64(value)
+
+	case PrimitiveStaticTypeUInt:
+		return NewUnmeteredUIntValueFromUint64(uint64(value))
+	case PrimitiveStaticTypeUInt8:
+		return NewUnmeteredUInt8Value(uint8(value))
+	case PrimitiveStaticTypeUInt16:
+		return NewUnmeteredUInt16Value(uint16(value))
+	case PrimitiveStaticTypeUInt32:
+		return NewUnmeteredUInt32Value(uint32(value))
+	case PrimitiveStaticTypeUInt64:
+		return NewUnmeteredUInt64Value(uint64(value))
+	case PrimitiveStaticTypeUInt128:
+		return NewUnmeteredUInt128ValueFromUint64(uint64(value))
+	case PrimitiveStaticTypeUInt256:
+		return NewUnmeteredUInt256ValueFromUint64(uint64(value))
+
+	case PrimitiveStaticTypeWord8:
+		return NewUnmeteredWord8Value(uint8(value))
+	case PrimitiveStaticTypeWord16:
+		return NewUnmeteredWord16Value(uint16(value))
+	case PrimitiveStaticTypeWord32:
+		return NewUnmeteredWord32Value(uint32(value))
+	case PrimitiveStaticTypeWord64:
+		return NewUnmeteredWord64Value(uint64(value))
+	case PrimitiveStaticTypeWord128:
+		return NewUnmeteredWord128ValueFromUint64(uint64(value))
+	case PrimitiveStaticTypeWord256:
+		return NewUnmeteredWord256ValueFromUint64(uint64(value))
+
+	default:
+		panic(errors.NewUnreachableError())
+	}
+}
+
 // RangeValue
 type RangeValue struct {
 	Type         RangeStaticType
-	semaType     *sema.RangeType
 	start        IntegerValue
 	endInclusive IntegerValue
 	step         IntegerValue
@@ -17833,17 +17884,17 @@ func NewRangeValue(
 		panic(errors.NewUnreachableError())
 	}
 
-	if startComparable.GreaterEqual(interpreter, endInclusiveComparable, locationRange) {
-		// stepValue should be 1
-	} else {
-		// stepValue should be -1
+	step := getValueForIntegerType(1, rangeType.ElementType)
+	if startComparable.Greater(interpreter, endInclusiveComparable, locationRange) {
+		negatedStep, ok := step.Negate(interpreter, locationRange).(IntegerValue)
+		if !ok {
+			panic(errors.NewUnreachableError())
+		}
+
+		step = negatedStep
 	}
 
-	return &RangeValue{
-		start:        start,
-		endInclusive: endInclusive,
-		Type:         rangeType,
-	}
+	return NewRangeValueWithStep(interpreter, locationRange, start, endInclusive, step, rangeType)
 }
 
 func NewRangeValueWithStep(
