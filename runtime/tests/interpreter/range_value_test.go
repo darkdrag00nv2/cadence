@@ -50,6 +50,10 @@ func TestRange(t *testing.T) {
 					   let e : %s = 20
 					   let step : %s = 2
 					   let r = Range(s, e, step: step)
+
+					   let count = r.count
+					   
+					   let containsTest = r.contains(s)
 					`,
 					memberType.String(), memberType.String(), memberType.String())
 			} else {
@@ -58,6 +62,10 @@ func TestRange(t *testing.T) {
 					   let s : %s = 10
 					   let e : %s = 20
 					   let r = Range(s, e)
+
+					   let count = r.count
+
+					   let containsTest = r.contains(s)
 					`,
 					memberType.String(), memberType.String())
 			}

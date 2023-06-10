@@ -5088,14 +5088,62 @@ func (t *RangeType) RewriteWithRestrictedTypes() (Type, bool) {
 	}
 }
 
+const rangeTypeCountFieldDocString = `
+The number of entries in the Range sequence
+`
+
+const rangeTypeContainsFunctionDocString = `
+Returns true if the given integer is in the Range sequence
+`
+
 func (t *RangeType) GetMembers() map[string]MemberResolver {
 	t.initializeMemberResolvers()
 	return t.memberResolvers
 }
 
-func (t *RangeType) initializeMemberResolvers() {
-	t.memberResolversOnce.Do(func() {
-		t.memberResolvers = withBuiltinMembers(t, map[string]MemberResolver{})
+func RangeContainsFunctionType(elementType Type) *FunctionType {
+	return &FunctionType{
+		Parameters: []Parameter{
+			{
+				Label:          ArgumentLabelNotRequired,
+				Identifier:     "element",
+				TypeAnnotation: NewTypeAnnotation(elementType),
+			},
+		},
+		ReturnTypeAnnotation: NewTypeAnnotation(
+			BoolType,
+		),
+	}
+}
+
+func (r *RangeType) initializeMemberResolvers() {
+	r.memberResolversOnce.Do(func() {
+		r.memberResolvers = withBuiltinMembers(r, map[string]MemberResolver{
+			"count": {
+				Kind: common.DeclarationKindField,
+				Resolve: func(memoryGauge common.MemoryGauge, identifier string, _ ast.Range, _ func(error)) *Member {
+					return NewPublicConstantFieldMember(
+						memoryGauge,
+						r,
+						identifier,
+						r.MemberType,
+						rangeTypeCountFieldDocString,
+					)
+				},
+			},
+			"contains": {
+				Kind: common.DeclarationKindFunction,
+				Resolve: func(memoryGauge common.MemoryGauge, identifier string, targetRange ast.Range, report func(error)) *Member {
+					return NewPublicFunctionMember(
+						memoryGauge,
+						r,
+						identifier,
+						RangeContainsFunctionType(r.MemberType),
+						rangeTypeContainsFunctionDocString,
+					)
+				},
+			},
+		})
 	})
 }
 

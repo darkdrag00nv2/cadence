@@ -17866,6 +17866,7 @@ func getValueForIntegerType(value int64, staticType StaticType) IntegerValue {
 // RangeValue
 type RangeValue struct {
 	Type         RangeStaticType
+	semaType     *sema.RangeType
 	start        IntegerValue
 	endInclusive IntegerValue
 	step         IntegerValue
@@ -17905,6 +17906,9 @@ func NewRangeValueWithStep(
 	step IntegerValue,
 	rangeType RangeStaticType,
 ) *RangeValue {
+	// TODO: Validate if the sequence is moving away from the endInclusive value.
+	// Also validate that step is non-zero.
+
 	return &RangeValue{
 		start:        start,
 		endInclusive: endInclusive,
@@ -17935,8 +17939,79 @@ func (v *RangeValue) Walk(interpreter *Interpreter, walkChild func(Value)) {
 	// NO-OP
 }
 
-func (v *RangeValue) GetMember(interpreter *Interpreter, locationRange LocationRange, name string) Value {
+func (r *RangeValue) GetMember(interpreter *Interpreter, locationRange LocationRange, name string) Value {
+	switch name {
+	case "count":
+		diff, ok := r.endInclusive.Minus(interpreter, r.start, locationRange).(IntegerValue)
+		if !ok {
+			panic(errors.NewUnreachableError())
+		}
+
+		// Perform integer division & drop the decimal part.
+		// Note that step is guaranteed to be non-zero.
+		return diff.Div(interpreter, r.step, locationRange)
+
+	case "contains":
+		return NewHostFunctionValue(
+			interpreter,
+			sema.RangeContainsFunctionType(
+				r.SemaType(interpreter).MemberType,
+			),
+			func(invocation Invocation) Value {
+				return r.Contains(
+					invocation.Interpreter,
+					invocation.LocationRange,
+					invocation.Arguments[0],
+				)
+			},
+		)
+	}
+
 	return nil
+}
+
+func (r *RangeValue) Contains(
+	interpreter *Interpreter,
+	locationRange LocationRange,
+	needleValue Value,
+) BoolValue {
+	needleInteger, ok := needleValue.(IntegerValue)
+	if !ok {
+		panic(errors.NewUnreachableError())
+	}
+
+	var result bool
+	result = r.start.Equal(interpreter, locationRange, needleInteger) ||
+		r.endInclusive.Equal(interpreter, locationRange, needleInteger)
+
+	if !result {
+		greaterThanStart := needleInteger.Greater(interpreter, r.start, locationRange)
+		greaterThanEndInclusive := needleInteger.Greater(interpreter, r.endInclusive, locationRange)
+
+		if greaterThanStart == greaterThanEndInclusive {
+			// If needle is greater or smaller than both start & endInclusive, then it is outside the range.
+			result = false
+		} else {
+			// needle is in between start and endInclusive.
+			// start + k * step should be equal to needle i.e. (needle - start) mod step == 0.
+			diff, ok := needleInteger.Minus(interpreter, r.start, locationRange).(IntegerValue)
+			if !ok {
+				panic(errors.NewUnreachableError())
+			}
+
+			result = diff.Mod(interpreter, r.step, locationRange).Equal(interpreter, locationRange, getValueForIntegerType(0, r.Type.ElementType))
+		}
+	}
+
+	return AsBoolValue(result)
+}
+
+func (r *RangeValue) SemaType(interpreter *Interpreter) *sema.RangeType {
+	if r.semaType == nil {
+		// this function will panic already if this conversion fails
+		r.semaType, _ = interpreter.MustConvertStaticToSemaType(r.Type).(*sema.RangeType)
+	}
+	return r.semaType
 }
 
 func (*RangeValue) RemoveMember(_ *Interpreter, _ LocationRange, _ string) Value {
