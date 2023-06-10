@@ -67,14 +67,7 @@ func rootState(l *lexer) stateFn {
 		case ':':
 			l.emitType(TokenColon)
 		case '.':
-			r = l.next()
-			switch r {
-			case '.':
-				l.emitType(TokenDoubleDot)
-			default:
-				l.backupOne()
-				l.emitType(TokenDot)
-			}
+			l.emitType(TokenDot)
 		case '=':
 			if l.acceptOne('=') {
 				l.emitType(TokenEqualEqual)

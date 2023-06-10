@@ -55,7 +55,6 @@ const (
 	TokenComma
 	TokenColon
 	TokenDot
-	TokenDoubleDot
 	TokenSemicolon
 	TokenLeftArrow
 	TokenLeftArrowExclamation
@@ -151,8 +150,6 @@ func (t TokenType) String() string {
 		return `':'`
 	case TokenDot:
 		return `'.'`
-	case TokenDoubleDot:
-		return `'..'`
 	case TokenSemicolon:
 		return `';'`
 	case TokenLeftArrow:
