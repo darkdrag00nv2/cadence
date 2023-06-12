@@ -18097,8 +18097,19 @@ func (r *RangeValue) StaticType(interpreter *Interpreter) StaticType {
 	return r.Type
 }
 
-func (*RangeValue) Equal(interpreter *Interpreter, locationRange LocationRange, other Value) bool {
-	panic("unimplemented Equal")
+func (r *RangeValue) Equal(interpreter *Interpreter, locationRange LocationRange, other Value) bool {
+	otherRange, ok := other.(*RangeValue)
+	if !ok {
+		return false
+	}
+
+	if !r.Type.Equal(otherRange.Type) {
+		return false
+	}
+
+	return r.start.Equal(interpreter, locationRange, otherRange.start) &&
+		r.endInclusive.Equal(interpreter, locationRange, otherRange.endInclusive) &&
+		r.step.Equal(interpreter, locationRange, otherRange.step)
 }
 
 func (*RangeValue) Encode(*atree.Encoder) error {
