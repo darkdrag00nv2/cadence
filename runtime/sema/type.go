@@ -5088,9 +5088,16 @@ func (t *RangeType) RewriteWithRestrictedTypes() (Type, bool) {
 	}
 }
 
+const RangeTypeStartFieldName = "start"
+const RangeTypeEndInclusiveFieldName = "endInclusive"
+const RangeTypeStepFieldName = "step"
+const RangeTypeCountFieldName = "count"
+
 const rangeTypeCountFieldDocString = `
 The number of entries in the Range sequence
 `
+
+const RangeTypeContainsFunctionName = "contains"
 
 const rangeTypeContainsFunctionDocString = `
 Returns true if the given integer is in the Range sequence
@@ -5119,7 +5126,7 @@ func RangeContainsFunctionType(elementType Type) *FunctionType {
 func (r *RangeType) initializeMemberResolvers() {
 	r.memberResolversOnce.Do(func() {
 		r.memberResolvers = withBuiltinMembers(r, map[string]MemberResolver{
-			"count": {
+			RangeTypeCountFieldName: {
 				Kind: common.DeclarationKindField,
 				Resolve: func(memoryGauge common.MemoryGauge, identifier string, _ ast.Range, _ func(error)) *Member {
 					return NewPublicConstantFieldMember(
@@ -5131,7 +5138,7 @@ func (r *RangeType) initializeMemberResolvers() {
 					)
 				},
 			},
-			"contains": {
+			RangeTypeContainsFunctionName: {
 				Kind: common.DeclarationKindFunction,
 				Resolve: func(memoryGauge common.MemoryGauge, identifier string, targetRange ast.Range, report func(error)) *Member {
 					return NewPublicFunctionMember(

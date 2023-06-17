@@ -3004,6 +3004,9 @@ func getNumberValueMember(interpreter *Interpreter, v NumberValue, name string, 
 
 type IntegerValue interface {
 	NumberValue
+	// This is here to allow easier encoding of generic types over IntegerValue, for eg Range<T:IntegerValue>
+	// It should be fine since all the implementations of IntegerValue should be Storable already.
+	Encode(*atree.Encoder) error
 	BitwiseOr(interpreter *Interpreter, other IntegerValue, locationRange LocationRange) IntegerValue
 	BitwiseXor(interpreter *Interpreter, other IntegerValue, locationRange LocationRange) IntegerValue
 	BitwiseAnd(interpreter *Interpreter, other IntegerValue, locationRange LocationRange) IntegerValue
@@ -15185,6 +15188,21 @@ func NewUnmeteredCompositeField(name string, value Value) CompositeField {
 	}
 }
 
+func NewCompositeValueWithStaticType(
+	interpreter *Interpreter,
+	locationRange LocationRange,
+	location common.Location,
+	qualifiedIdentifier string,
+	kind common.CompositeKind,
+	fields []CompositeField,
+	address common.Address,
+	staticType StaticType,
+) *CompositeValue {
+	value := NewCompositeValue(interpreter, locationRange, location, qualifiedIdentifier, kind, fields, address)
+	value.staticType = staticType
+	return value
+}
+
 func NewCompositeValue(
 	interpreter *Interpreter,
 	locationRange LocationRange,
@@ -17872,249 +17890,243 @@ type RangeValue struct {
 	step         IntegerValue
 }
 
-func NewRangeValue(
-	interpreter *Interpreter,
-	locationRange LocationRange,
-	start IntegerValue,
-	endInclusive IntegerValue,
-	rangeType RangeStaticType,
-) *RangeValue {
-	startComparable, startOk := start.(ComparableValue)
-	endInclusiveComparable, endInclusiveOk := endInclusive.(ComparableValue)
-	if !startOk || !endInclusiveOk {
-		panic(errors.NewUnreachableError())
-	}
+// func NewRangeValue(
+// 	interpreter *Interpreter,
+// 	locationRange LocationRange,
+// 	start IntegerValue,
+// 	endInclusive IntegerValue,
+// 	rangeType RangeStaticType,
+// ) *RangeValue {
+// 	startComparable, startOk := start.(ComparableValue)
+// 	endInclusiveComparable, endInclusiveOk := endInclusive.(ComparableValue)
+// 	if !startOk || !endInclusiveOk {
+// 		panic(errors.NewUnreachableError())
+// 	}
 
-	step := getValueForIntegerType(1, rangeType.ElementType)
-	if startComparable.Greater(interpreter, endInclusiveComparable, locationRange) {
-		negatedStep, ok := step.Negate(interpreter, locationRange).(IntegerValue)
-		if !ok {
-			panic(errors.NewUnreachableError())
-		}
+// 	step := getValueForIntegerType(1, rangeType.ElementType)
+// 	if startComparable.Greater(interpreter, endInclusiveComparable, locationRange) {
+// 		negatedStep, ok := step.Negate(interpreter, locationRange).(IntegerValue)
+// 		if !ok {
+// 			panic(errors.NewUnreachableError())
+// 		}
 
-		step = negatedStep
-	}
+// 		step = negatedStep
+// 	}
 
-	return NewRangeValueWithStep(interpreter, locationRange, start, endInclusive, step, rangeType)
-}
+// 	return NewRangeValueWithStep(start, endInclusive, step, rangeType)
+// }
 
-func NewRangeValueWithStep(
-	interpreter *Interpreter,
-	locationRange LocationRange,
-	start IntegerValue,
-	endInclusive IntegerValue,
-	step IntegerValue,
-	rangeType RangeStaticType,
-) *RangeValue {
-	// TODO: Validate if the sequence is moving away from the endInclusive value.
-	// Also validate that step is non-zero.
+// func NewRangeValueWithStep(
+// 	start IntegerValue,
+// 	endInclusive IntegerValue,
+// 	step IntegerValue,
+// 	rangeType RangeStaticType,
+// ) *RangeValue {
+// 	// TODO: Validate if the sequence is moving away from the endInclusive value.
+// 	// Also validate that step is non-zero.
 
-	return &RangeValue{
-		start:        start,
-		endInclusive: endInclusive,
-		step:         step,
-		Type:         rangeType,
-	}
-}
+// 	return &RangeValue{
+// 		start:        start,
+// 		endInclusive: endInclusive,
+// 		step:         step,
+// 		Type:         rangeType,
+// 	}
+// }
 
-var _ Value = &RangeValue{}
-var _ atree.Storable = &RangeValue{}
-var _ EquatableValue = &RangeValue{}
-var _ MemberAccessibleValue = &RangeValue{}
+// var _ Value = &RangeValue{}
+// var _ atree.Value = &RangeValue{}
+// var _ EquatableValue = &RangeValue{}
+// var _ MemberAccessibleValue = &RangeValue{}
 
-func (*RangeValue) isValue() {}
+// func (*RangeValue) isValue() {}
 
-func (v *RangeValue) Accept(interpreter *Interpreter, visitor Visitor) {
-	descend := visitor.VisitRangeValue(interpreter, v)
-	if !descend {
-		return
-	}
+// func (v *RangeValue) Accept(interpreter *Interpreter, visitor Visitor) {
+// 	descend := visitor.VisitRangeValue(interpreter, v)
+// 	if !descend {
+// 		return
+// 	}
 
-	v.Walk(interpreter, func(value Value) {
-		value.Accept(interpreter, visitor)
-	})
-}
+// 	v.Walk(interpreter, func(value Value) {
+// 		value.Accept(interpreter, visitor)
+// 	})
+// }
 
-func (v *RangeValue) Walk(interpreter *Interpreter, walkChild func(Value)) {
-	// NO-OP
-}
+// func (v *RangeValue) Walk(interpreter *Interpreter, walkChild func(Value)) {
+// 	// NO-OP
+// }
 
-func (r *RangeValue) GetMember(interpreter *Interpreter, locationRange LocationRange, name string) Value {
-	switch name {
-	case "count":
-		diff, ok := r.endInclusive.Minus(interpreter, r.start, locationRange).(IntegerValue)
-		if !ok {
-			panic(errors.NewUnreachableError())
-		}
+// func (r *RangeValue) GetMember(interpreter *Interpreter, locationRange LocationRange, name string) Value {
+// 	switch name {
+// 	case "count":
+// 		diff, ok := r.endInclusive.Minus(interpreter, r.start, locationRange).(IntegerValue)
+// 		if !ok {
+// 			panic(errors.NewUnreachableError())
+// 		}
 
-		// Perform integer division & drop the decimal part.
-		// Note that step is guaranteed to be non-zero.
-		return diff.Div(interpreter, r.step, locationRange)
+// 		// Perform integer division & drop the decimal part.
+// 		// Note that step is guaranteed to be non-zero.
+// 		return diff.Div(interpreter, r.step, locationRange)
 
-	case "contains":
-		return NewHostFunctionValue(
-			interpreter,
-			sema.RangeContainsFunctionType(
-				r.SemaType(interpreter).MemberType,
-			),
-			func(invocation Invocation) Value {
-				return r.Contains(
-					invocation.Interpreter,
-					invocation.LocationRange,
-					invocation.Arguments[0],
-				)
-			},
-		)
-	}
+// 	case "contains":
+// 		return NewHostFunctionValue(
+// 			interpreter,
+// 			sema.RangeContainsFunctionType(
+// 				r.SemaType(interpreter).MemberType,
+// 			),
+// 			func(invocation Invocation) Value {
+// 				return r.Contains(
+// 					invocation.Interpreter,
+// 					invocation.LocationRange,
+// 					invocation.Arguments[0],
+// 				)
+// 			},
+// 		)
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
-func (r *RangeValue) Contains(
-	interpreter *Interpreter,
-	locationRange LocationRange,
-	needleValue Value,
-) BoolValue {
-	needleInteger, ok := needleValue.(IntegerValue)
-	if !ok {
-		panic(errors.NewUnreachableError())
-	}
+// func (r *RangeValue) Contains(
+// 	interpreter *Interpreter,
+// 	locationRange LocationRange,
+// 	needleValue Value,
+// ) BoolValue {
+// 	needleInteger, ok := needleValue.(IntegerValue)
+// 	if !ok {
+// 		panic(errors.NewUnreachableError())
+// 	}
 
-	var result bool
-	result = r.start.Equal(interpreter, locationRange, needleInteger) ||
-		r.endInclusive.Equal(interpreter, locationRange, needleInteger)
+// 	var result bool
+// 	result = r.start.Equal(interpreter, locationRange, needleInteger) ||
+// 		r.endInclusive.Equal(interpreter, locationRange, needleInteger)
 
-	if !result {
-		greaterThanStart := needleInteger.Greater(interpreter, r.start, locationRange)
-		greaterThanEndInclusive := needleInteger.Greater(interpreter, r.endInclusive, locationRange)
+// 	if !result {
+// 		greaterThanStart := needleInteger.Greater(interpreter, r.start, locationRange)
+// 		greaterThanEndInclusive := needleInteger.Greater(interpreter, r.endInclusive, locationRange)
 
-		if greaterThanStart == greaterThanEndInclusive {
-			// If needle is greater or smaller than both start & endInclusive, then it is outside the range.
-			result = false
-		} else {
-			// needle is in between start and endInclusive.
-			// start + k * step should be equal to needle i.e. (needle - start) mod step == 0.
-			diff, ok := needleInteger.Minus(interpreter, r.start, locationRange).(IntegerValue)
-			if !ok {
-				panic(errors.NewUnreachableError())
-			}
+// 		if greaterThanStart == greaterThanEndInclusive {
+// 			// If needle is greater or smaller than both start & endInclusive, then it is outside the range.
+// 			result = false
+// 		} else {
+// 			// needle is in between start and endInclusive.
+// 			// start + k * step should be equal to needle i.e. (needle - start) mod step == 0.
+// 			diff, ok := needleInteger.Minus(interpreter, r.start, locationRange).(IntegerValue)
+// 			if !ok {
+// 				panic(errors.NewUnreachableError())
+// 			}
 
-			result = diff.Mod(interpreter, r.step, locationRange).Equal(interpreter, locationRange, getValueForIntegerType(0, r.Type.ElementType))
-		}
-	}
+// 			result = diff.Mod(interpreter, r.step, locationRange).Equal(interpreter, locationRange, getValueForIntegerType(0, r.Type.ElementType))
+// 		}
+// 	}
 
-	return AsBoolValue(result)
-}
+// 	return AsBoolValue(result)
+// }
 
-func (r *RangeValue) SemaType(interpreter *Interpreter) *sema.RangeType {
-	if r.semaType == nil {
-		// this function will panic already if this conversion fails
-		r.semaType, _ = interpreter.MustConvertStaticToSemaType(r.Type).(*sema.RangeType)
-	}
-	return r.semaType
-}
+// func (r *RangeValue) SemaType(interpreter *Interpreter) *sema.RangeType {
+// 	if r.semaType == nil {
+// 		// this function will panic already if this conversion fails
+// 		r.semaType, _ = interpreter.MustConvertStaticToSemaType(r.Type).(*sema.RangeType)
+// 	}
+// 	return r.semaType
+// }
 
-func (*RangeValue) RemoveMember(_ *Interpreter, _ LocationRange, _ string) Value {
-	// Ranges have no removable members (fields / functions)
-	panic(errors.NewUnreachableError())
-}
+// func (*RangeValue) RemoveMember(_ *Interpreter, _ LocationRange, _ string) Value {
+// 	// Ranges have no removable members (fields / functions)
+// 	panic(errors.NewUnreachableError())
+// }
 
-func (*RangeValue) SetMember(_ *Interpreter, _ LocationRange, _ string, _ Value) bool {
-	// Ranges have no settable members (fields / functions)
-	panic(errors.NewUnreachableError())
-}
+// func (*RangeValue) SetMember(_ *Interpreter, _ LocationRange, _ string, _ Value) bool {
+// 	// Ranges have no settable members (fields / functions)
+// 	panic(errors.NewUnreachableError())
+// }
 
-func (v *RangeValue) ConformsToStaticType(
-	_ *Interpreter,
-	_ LocationRange,
-	_ TypeConformanceResults,
-) bool {
-	return true
-}
+// func (v *RangeValue) ConformsToStaticType(
+// 	_ *Interpreter,
+// 	_ LocationRange,
+// 	_ TypeConformanceResults,
+// ) bool {
+// 	return true
+// }
 
-func (v *RangeValue) Storable(_ atree.SlabStorage, _ atree.Address, _ uint64) (atree.Storable, error) {
-	return v, nil
-}
+// func (v *RangeValue) Storable(_ atree.SlabStorage, _ atree.Address, _ uint64) (atree.Storable, error) {
+// 	return v, nil
+// }
 
-func (*RangeValue) NeedsStoreTo(_ atree.Address) bool {
-	return false
-}
+// func (*RangeValue) NeedsStoreTo(_ atree.Address) bool {
+// 	return false
+// }
 
-func (*RangeValue) IsResourceKinded(_ *Interpreter) bool {
-	return false
-}
+// func (*RangeValue) IsResourceKinded(_ *Interpreter) bool {
+// 	return false
+// }
 
-func (v *RangeValue) Transfer(
-	interpreter *Interpreter,
-	_ LocationRange,
-	_ atree.Address,
-	remove bool,
-	storable atree.Storable,
-) Value {
-	if remove {
-		interpreter.RemoveReferencedSlab(storable)
-	}
-	return v
-}
+// func (v *RangeValue) Transfer(
+// 	interpreter *Interpreter,
+// 	_ LocationRange,
+// 	_ atree.Address,
+// 	remove bool,
+// 	storable atree.Storable,
+// ) Value {
+// 	if remove {
+// 		interpreter.RemoveReferencedSlab(storable)
+// 	}
+// 	return v
+// }
 
-func (v *RangeValue) Clone(_ *Interpreter) Value {
-	return v
-}
+// func (v *RangeValue) Clone(_ *Interpreter) Value {
+// 	return v
+// }
 
-func (*RangeValue) DeepRemove(_ *Interpreter) {
-	// NO-OP
-}
+// func (*RangeValue) DeepRemove(_ *Interpreter) {
+// 	// NO-OP
+// }
 
-func (v *RangeValue) ByteSize() uint32 {
-	return 0
-}
+// func (v *RangeValue) ByteSize() uint32 {
+// 	return 0
+// }
 
-func (v *RangeValue) StoredValue(_ atree.SlabStorage) (atree.Value, error) {
-	return v, nil
-}
+// func (v *RangeValue) StoredValue(_ atree.SlabStorage) (atree.Value, error) {
+// 	return v, nil
+// }
 
-func (*RangeValue) ChildStorables() []atree.Storable {
-	return nil
-}
+// func (*RangeValue) ChildStorables() []atree.Storable {
+// 	return nil
+// }
 
-func (r *RangeValue) String() string {
-	return r.RecursiveString(SeenReferences{})
-}
+// func (r *RangeValue) String() string {
+// 	return r.RecursiveString(SeenReferences{})
+// }
 
-func (*RangeValue) IsImportable(interpreter *Interpreter) bool {
-	panic("unimplemented IsImportable")
-}
+// func (*RangeValue) IsImportable(interpreter *Interpreter) bool {
+// 	panic("unimplemented IsImportable")
+// }
 
-func (r *RangeValue) MeteredString(memoryGauge common.MemoryGauge, seenReferences SeenReferences) string {
-	return format.Range(r.start.String(), r.endInclusive.String())
-}
+// func (r *RangeValue) MeteredString(memoryGauge common.MemoryGauge, seenReferences SeenReferences) string {
+// 	return format.Range(r.start.String(), r.endInclusive.String())
+// }
 
-func (r *RangeValue) RecursiveString(seenReferences SeenReferences) string {
-	return r.MeteredString(nil, seenReferences)
-}
+// func (r *RangeValue) RecursiveString(seenReferences SeenReferences) string {
+// 	return r.MeteredString(nil, seenReferences)
+// }
 
-func (r *RangeValue) StaticType(interpreter *Interpreter) StaticType {
-	return r.Type
-}
+// func (r *RangeValue) StaticType(interpreter *Interpreter) StaticType {
+// 	return r.Type
+// }
 
-func (r *RangeValue) Equal(interpreter *Interpreter, locationRange LocationRange, other Value) bool {
-	otherRange, ok := other.(*RangeValue)
-	if !ok {
-		return false
-	}
+// func (r *RangeValue) Equal(interpreter *Interpreter, locationRange LocationRange, other Value) bool {
+// 	otherRange, ok := other.(*RangeValue)
+// 	if !ok {
+// 		return false
+// 	}
 
-	if !r.Type.Equal(otherRange.Type) {
-		return false
-	}
+// 	if !r.Type.Equal(otherRange.Type) {
+// 		return false
+// 	}
 
-	return r.start.Equal(interpreter, locationRange, otherRange.start) &&
-		r.endInclusive.Equal(interpreter, locationRange, otherRange.endInclusive) &&
-		r.step.Equal(interpreter, locationRange, otherRange.step)
-}
-
-func (*RangeValue) Encode(*atree.Encoder) error {
-	panic("unimplemented Encode")
-}
+// 	return r.start.Equal(interpreter, locationRange, otherRange.start) &&
+// 		r.endInclusive.Equal(interpreter, locationRange, otherRange.endInclusive) &&
+// 		r.step.Equal(interpreter, locationRange, otherRange.step)
+// }
 
 // OptionalValue
 

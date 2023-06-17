@@ -116,7 +116,7 @@ const (
 	_ // DO *NOT* REPLACE. Previously used for array values
 	CBORTagStringValue
 	CBORTagCharacterValue
-	_
+	CBORTagRangeValue
 	_
 	_
 	_
@@ -1217,6 +1217,65 @@ func (v *AccountCapabilityControllerValue) Encode(e *atree.Encoder) error {
 
 	// Encode ID at array index encodedAccountCapabilityControllerValueCapabilityIDFieldKey
 	return e.CBOR.EncodeUint64(uint64(v.CapabilityID))
+}
+
+// NOTE: NEVER change, only add/increment; ensure uint64
+const (
+	// rangeValueStaticTypeKey        uint64 = 0
+	// rangeValueStartFieldKey        uint64 = 1
+	// rangeValueEndInclusiveFieldKey uint64 = 2
+	// rangeValueStepFieldKey         uint64 = 3
+
+	// !!! *WARNING* !!!
+	//
+	// rangeValueLength MUST be updated when new element is added.
+	// It is used to verify encoded capability length during decoding.
+	encodedRangeValueLength = 4
+)
+
+// Encode encodes RangeValue as
+//
+//	cbor.Tag{
+//				Number: CBORTagRangeValue,
+//				Content: []any{
+//						rangeValueStaticTypeKey:        RangeStaticType(v.Type),
+//						rangeValueStartFieldKey:        IntegerValue(v.start),
+//						rangeValueEndInclusiveFieldKey: IntegerValue(v.endInclusive),
+//						rangeValueStepFieldKey:         IntegerValue(v.step),
+//					},
+//	}
+func (r *RangeValue) Encode(e *atree.Encoder) error {
+	// Encode tag number and array head
+	err := e.CBOR.EncodeRawBytes([]byte{
+		// tag number
+		0xd8, CBORTagRangeValue,
+		// array, 4 items follow
+		0x84,
+	})
+	if err != nil {
+		return err
+	}
+
+	// Encode type at array index rangeValueStaticTypeKey
+	err = r.Type.Encode(e.CBOR)
+	if err != nil {
+		return err
+	}
+
+	// Encode start at array index rangeValueStartFieldKey
+	err = r.start.Encode(e)
+	if err != nil {
+		return err
+	}
+
+	// Encode endInclusive at array index rangeValueEndInclusiveFieldKey
+	err = r.endInclusive.Encode(e)
+	if err != nil {
+		return err
+	}
+
+	// Encode step at array index rangeValueStepFieldKey
+	return r.step.Encode(e)
 }
 
 func StaticTypeToBytes(t StaticType) (cbor.RawMessage, error) {
