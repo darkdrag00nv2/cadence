@@ -3239,6 +3239,8 @@ var AllUnsignedIntegerTypes = []Type{
 	Word256Type,
 }
 
+var AllUnsignedIntegerTypesSet = make(map[Type]struct{})
+
 var AllIntegerTypes = append(
 	append(
 		AllUnsignedIntegerTypes[:],
@@ -3385,6 +3387,11 @@ func init() {
 				),
 			)
 		}
+	}
+
+	// Populate AllUnsignedIntegerTypesSet
+	for _, ty := range AllUnsignedIntegerTypes {
+		AllUnsignedIntegerTypesSet[ty] = struct{}{}
 	}
 }
 
