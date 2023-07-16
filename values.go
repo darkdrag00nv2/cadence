@@ -2051,6 +2051,87 @@ func (v Contract) GetFieldValues() []Value {
 	return v.Fields
 }
 
+// InclusiveRange
+//
+// Note: Range values are a bit different since they are represented
+// as a CompositeValue in Cadence but exposed as a separate sema type.
+
+type InclusiveRange struct {
+	InclusiveRangeType *InclusiveRangeType
+	Fields             []Value
+}
+
+var _ Value = InclusiveRange{}
+
+func newInclusiveRange(fields []Value) InclusiveRange {
+	return InclusiveRange{Fields: fields}
+}
+
+func NewMeteredInclusiveRange(
+	gauge common.MemoryGauge,
+	constructor func() ([]Value, error),
+) (InclusiveRange, error) {
+	common.UseMemory(gauge, common.CadenceInclusiveRangeValueMemoryUsage)
+	fields, err := constructor()
+	if err != nil {
+		return InclusiveRange{}, err
+	}
+	if len(fields) != 3 ||
+		!fields[0].Type().Equal(fields[1].Type()) ||
+		!fields[0].Type().Equal(fields[2].Type()) {
+		// There must be exactly 3 fields which should all be of the same type.
+		return InclusiveRange{}, err
+	}
+	return newInclusiveRange(fields), nil
+}
+
+func (InclusiveRange) isValue() {}
+
+func (v InclusiveRange) Type() Type {
+	if v.InclusiveRangeType == nil {
+		// Return nil Type instead of Type referencing nil *InclusiveRangeType,
+		// so caller can check if v's type is nil and also prevent nil pointer dereference.
+		return nil
+	}
+	return v.InclusiveRangeType
+}
+
+func (v InclusiveRange) MeteredType(common.MemoryGauge) Type {
+	return v.Type()
+}
+
+func (v InclusiveRange) WithType(typ *InclusiveRangeType) InclusiveRange {
+	v.InclusiveRangeType = typ
+	return v
+}
+
+func (v InclusiveRange) ToGoValue() any {
+	// InclusiveRange has 3 fields.
+	ret := make([]any, 3)
+
+	for i, field := range v.GetFieldValues() {
+		ret[i] = field.ToGoValue()
+	}
+
+	return ret
+}
+
+func (v InclusiveRange) String() string {
+	return formatComposite(v.InclusiveRangeType.ID(), v.InclusiveRangeType.Fields, v.GetFieldValues())
+}
+
+func (v InclusiveRange) GetFields() []Field {
+	if v.InclusiveRangeType == nil {
+		return nil
+	}
+
+	return v.InclusiveRangeType.Fields
+}
+
+func (v InclusiveRange) GetFieldValues() []Value {
+	return v.Fields
+}
+
 // PathLink
 
 type PathLink struct {

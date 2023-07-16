@@ -57,7 +57,7 @@ var inclusiveRangeConstructorFunctionType = func() *sema.FunctionType {
 			},
 			{
 				Label:          sema.ArgumentLabelNotRequired,
-				Identifier:     "endInclusive",
+				Identifier:     "end",
 				TypeAnnotation: typeAnnotation,
 			},
 			{
@@ -80,9 +80,9 @@ var InclusiveRangeConstructorFunction = NewStandardLibraryFunction(
 	inclusiveRangeConstructorFunctionDocString,
 	func(invocation interpreter.Invocation) interpreter.Value {
 		start, startOk := invocation.Arguments[0].(interpreter.IntegerValue)
-		endInclusive, endInclusiveOk := invocation.Arguments[1].(interpreter.IntegerValue)
+		end, endOk := invocation.Arguments[1].(interpreter.IntegerValue)
 
-		if !startOk || !endInclusiveOk {
+		if !startOk || !endOk {
 			panic(errors.NewUnreachableError())
 		}
 
@@ -90,9 +90,9 @@ var InclusiveRangeConstructorFunction = NewStandardLibraryFunction(
 		locationRange := invocation.LocationRange
 
 		leftStaticType := start.StaticType(inter)
-		rightStaticType := endInclusive.StaticType(inter)
+		rightStaticType := end.StaticType(inter)
 		if leftStaticType != rightStaticType {
-			// Checker would only allow same type for both start & endInclusive.
+			// Checker would only allow same type for both start & end.
 			panic(errors.NewUnreachableError())
 		}
 
@@ -108,12 +108,12 @@ var InclusiveRangeConstructorFunction = NewStandardLibraryFunction(
 				inter,
 				locationRange,
 				start,
-				endInclusive,
+				end,
 				step,
 				rangeStaticType,
 			)
 		} else {
-			return interpreter.NewInclusiveRangeValue(inter, locationRange, start, endInclusive, rangeStaticType)
+			return interpreter.NewInclusiveRangeValue(inter, locationRange, start, end, rangeStaticType)
 		}
 	},
 )

@@ -141,7 +141,7 @@ const (
 	CBORTagEventTypeValue
 	CBORTagContractTypeValue
 	CBORTagEnumTypeValue
-	_
+	CBORTagInclusiveRangeTypeValue // InclusiveRange is stored as a composite value.
 	_
 	_
 	_

@@ -223,48 +223,49 @@ type jsonFunctionValue struct {
 }
 
 const (
-	voidTypeStr        = "Void"
-	optionalTypeStr    = "Optional"
-	boolTypeStr        = "Bool"
-	characterTypeStr   = "Character"
-	stringTypeStr      = "String"
-	addressTypeStr     = "Address"
-	intTypeStr         = "Int"
-	int8TypeStr        = "Int8"
-	int16TypeStr       = "Int16"
-	int32TypeStr       = "Int32"
-	int64TypeStr       = "Int64"
-	int128TypeStr      = "Int128"
-	int256TypeStr      = "Int256"
-	uintTypeStr        = "UInt"
-	uint8TypeStr       = "UInt8"
-	uint16TypeStr      = "UInt16"
-	uint32TypeStr      = "UInt32"
-	uint64TypeStr      = "UInt64"
-	uint128TypeStr     = "UInt128"
-	uint256TypeStr     = "UInt256"
-	word8TypeStr       = "Word8"
-	word16TypeStr      = "Word16"
-	word32TypeStr      = "Word32"
-	word64TypeStr      = "Word64"
-	word128TypeStr     = "Word128"
-	word256TypeStr     = "Word256"
-	fix64TypeStr       = "Fix64"
-	ufix64TypeStr      = "UFix64"
-	arrayTypeStr       = "Array"
-	dictionaryTypeStr  = "Dictionary"
-	structTypeStr      = "Struct"
-	resourceTypeStr    = "Resource"
-	attachmentTypeStr  = "Attachment"
-	eventTypeStr       = "Event"
-	contractTypeStr    = "Contract"
-	linkTypeStr        = "Link"
-	accountLinkTypeStr = "AccountLink"
-	pathTypeStr        = "Path"
-	typeTypeStr        = "Type"
-	capabilityTypeStr  = "Capability"
-	enumTypeStr        = "Enum"
-	functionTypeStr    = "Function"
+	voidTypeStr           = "Void"
+	optionalTypeStr       = "Optional"
+	boolTypeStr           = "Bool"
+	characterTypeStr      = "Character"
+	stringTypeStr         = "String"
+	addressTypeStr        = "Address"
+	intTypeStr            = "Int"
+	int8TypeStr           = "Int8"
+	int16TypeStr          = "Int16"
+	int32TypeStr          = "Int32"
+	int64TypeStr          = "Int64"
+	int128TypeStr         = "Int128"
+	int256TypeStr         = "Int256"
+	uintTypeStr           = "UInt"
+	uint8TypeStr          = "UInt8"
+	uint16TypeStr         = "UInt16"
+	uint32TypeStr         = "UInt32"
+	uint64TypeStr         = "UInt64"
+	uint128TypeStr        = "UInt128"
+	uint256TypeStr        = "UInt256"
+	word8TypeStr          = "Word8"
+	word16TypeStr         = "Word16"
+	word32TypeStr         = "Word32"
+	word64TypeStr         = "Word64"
+	word128TypeStr        = "Word128"
+	word256TypeStr        = "Word256"
+	fix64TypeStr          = "Fix64"
+	ufix64TypeStr         = "UFix64"
+	arrayTypeStr          = "Array"
+	dictionaryTypeStr     = "Dictionary"
+	structTypeStr         = "Struct"
+	resourceTypeStr       = "Resource"
+	attachmentTypeStr     = "Attachment"
+	eventTypeStr          = "Event"
+	contractTypeStr       = "Contract"
+	inclusiveRangeTypeStr = "InclusiveRange"
+	linkTypeStr           = "Link"
+	accountLinkTypeStr    = "AccountLink"
+	pathTypeStr           = "Path"
+	typeTypeStr           = "Type"
+	capabilityTypeStr     = "Capability"
+	enumTypeStr           = "Enum"
+	functionTypeStr       = "Function"
 )
 
 // Prepare traverses the object graph of the provided value and constructs
@@ -331,6 +332,8 @@ func Prepare(v cadence.Value) jsonValue {
 		return prepareArray(v)
 	case cadence.Dictionary:
 		return prepareDictionary(v)
+	case cadence.InclusiveRange:
+		return prepareInclusiveRange(v)
 	case cadence.Struct:
 		return prepareStruct(v)
 	case cadence.Resource:
@@ -590,6 +593,10 @@ func prepareDictionary(v cadence.Dictionary) jsonValue {
 		Type:  dictionaryTypeStr,
 		Value: items,
 	}
+}
+
+func prepareInclusiveRange(v cadence.InclusiveRange) jsonValue {
+	return prepareComposite(inclusiveRangeTypeStr, v.InclusiveRangeType.ID(), v.InclusiveRangeType.Fields, v.Fields)
 }
 
 func prepareStruct(v cadence.Struct) jsonValue {
@@ -872,6 +879,13 @@ func prepareType(typ cadence.Type, results typePreparationResults) jsonValue {
 			TypeID:       typeId(typ.Location, typ.QualifiedIdentifier),
 			Fields:       prepareFields(typ.Fields, results),
 			Initializers: prepareInitializers(typ.Initializers, results),
+		}
+	case *cadence.InclusiveRangeType:
+		return jsonNominalType{
+			Kind:   "InclusiveRange",
+			Type:   "",
+			TypeID: typ.ID(),
+			Fields: prepareFields(typ.Fields, results),
 		}
 	case *cadence.StructInterfaceType:
 		return jsonNominalType{

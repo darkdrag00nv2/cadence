@@ -413,7 +413,20 @@ func exportInclusiveRangeType(
 
 	return cadence.NewMeteredInclusiveRangeType(
 		gauge,
-		convertedMemberType,
+		[]cadence.Field{
+			{
+				Type:       convertedMemberType,
+				Identifier: sema.InclusiveRangeTypeStartFieldName,
+			},
+			{
+				Type:       convertedMemberType,
+				Identifier: sema.InclusiveRangeTypeStartFieldName,
+			},
+			{
+				Type:       convertedMemberType,
+				Identifier: sema.InclusiveRangeTypeStartFieldName,
+			},
+		},
 	)
 }
 

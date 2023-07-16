@@ -1441,6 +1441,28 @@ func TestExportAddressValue(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
+// func TestExportInclusiveRangeValue(t *testing.T) {
+
+// 	t.Parallel()
+
+// 	script := `
+//         pub fun main(): InclusiveRange<Int> {
+//             return InclusiveRange(10, 20, step: 2)
+//         }
+//     `
+
+// 	inclusiveRangeType := cadence.NewInclusiveRangeType(cadence.IntType{})
+
+// 	actual := exportValueFromScript(t, script)
+// 	expected := cadence.ValueWithCachedTypeID(
+// 		cadence.NewStruct([]cadence.Value{
+// 			cadence.NewInt(42),
+// 		}).WithType(inclusiveRangeType),
+// 	)
+
+// 	assert.Equal(t, expected, actual)
+// }
+
 func TestExportStructValue(t *testing.T) {
 
 	t.Parallel()

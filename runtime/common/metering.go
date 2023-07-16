@@ -192,6 +192,7 @@ var (
 	// Cadence external values
 
 	CadenceDictionaryValueMemoryUsage     = NewConstantMemoryUsage(MemoryKindCadenceDictionaryValue)
+	CadenceInclusiveRangeValueMemoryUsage = NewConstantMemoryUsage(MemoryKindCadenceInclusiveRangeValue)
 	CadenceArrayValueBaseMemoryUsage      = NewConstantMemoryUsage(MemoryKindCadenceArrayValueBase)
 	CadenceStructValueBaseMemoryUsage     = NewConstantMemoryUsage(MemoryKindCadenceStructValueBase)
 	CadenceResourceValueBaseMemoryUsage   = NewConstantMemoryUsage(MemoryKindCadenceResourceValueBase)

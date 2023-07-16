@@ -563,6 +563,9 @@ func (e *Encoder) encodeValue(
 	case cadence.Dictionary:
 		return e.encodeDictionary(v, tids)
 
+	case cadence.InclusiveRange:
+		return e.encodeInclusiveRange(v, tids)
+
 	case cadence.Struct:
 		return e.encodeStruct(v, tids)
 
@@ -1012,11 +1015,18 @@ func (e *Encoder) encodeEnum(v cadence.Enum, tids ccfTypeIDByCadenceType) error 
 	return e.encodeComposite(v.EnumType, v.Fields, tids)
 }
 
+// encodeInclusiveRange encodes cadence.InclusiveRange as
+// language=CDDL
+// composite-value = [* (field: value)]
+func (e *Encoder) encodeInclusiveRange(v cadence.InclusiveRange, tids ccfTypeIDByCadenceType) error {
+	return e.encodeComposite(v.InclusiveRangeType, v.Fields, tids)
+}
+
 // encodeComposite encodes composite types as
 // language=CDDL
 // composite-value = [* (field: value)]
 func (e *Encoder) encodeComposite(
-	typ cadence.CompositeType,
+	typ cadence.StoredAsCompositeType,
 	fields []cadence.Value,
 	tids ccfTypeIDByCadenceType,
 ) error {
@@ -1281,6 +1291,9 @@ func (e *Encoder) encodeTypeValue(typ cadence.Type, visited ccfTypeIDByCadenceTy
 
 	case *cadence.ContractType:
 		return e.encodeContractTypeValue(typ, visited)
+
+	case *cadence.InclusiveRangeType:
+		return e.encodeInclusiveRangeTypeValue(typ, visited)
 
 	case *cadence.StructInterfaceType:
 		return e.encodeStructInterfaceTypeValue(typ, visited)
@@ -1555,6 +1568,26 @@ func (e *Encoder) encodeEnumTypeValue(typ *cadence.EnumType, visited ccfTypeIDBy
 		typ.RawType,
 		typ.Fields,
 		typ.Initializers,
+		visited,
+		rawTagNum,
+	)
+}
+
+// encodeInclusiveRangeTypeValue encodes cadence.InclusiveRangeType as
+// language=CDDL
+// inclusiverange-type-value =
+//
+//	; cbor-tag-inclusiverange-type-value
+//	#6.213([
+//	    element-type: type-value
+//	])
+func (e *Encoder) encodeInclusiveRangeTypeValue(typ *cadence.InclusiveRangeType, visited ccfTypeIDByCadenceType) error {
+	rawTagNum := []byte{0xd8, CBORTagInclusiveRangeTypeValue}
+	return e.encodeCompositeTypeValue(
+		typ.ID(),
+		nil,
+		typ.Fields,
+		[][]cadence.Parameter{}, // InclusiveRange doesn't have initializers.
 		visited,
 		rawTagNum,
 	)
@@ -2070,7 +2103,7 @@ func putBuffer(e *bytes.Buffer) {
 	bufferPool.Put(e)
 }
 
-func (e *Encoder) getSortedFieldIndex(t cadence.CompositeType) []int {
+func (e *Encoder) getSortedFieldIndex(t cadence.StoredAsCompositeType) []int {
 	cadenceTypeID := t.ID()
 
 	if indexes, ok := e.cachedSortedFieldIndex[cadenceTypeID]; ok {

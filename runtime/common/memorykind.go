@@ -91,6 +91,7 @@ const (
 	MemoryKindCadenceArrayValueBase
 	MemoryKindCadenceArrayValueLength
 	MemoryKindCadenceDictionaryValue
+	MemoryKindCadenceInclusiveRangeValue
 	MemoryKindCadenceKeyValuePair
 	MemoryKindCadenceStructValueBase
 	MemoryKindCadenceStructValueSize

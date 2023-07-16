@@ -1059,52 +1059,6 @@ func (t *DictionaryType) Equal(other Type) bool {
 		t.ElementType.Equal(otherType.ElementType)
 }
 
-// InclusiveRangeType
-
-type InclusiveRangeType struct {
-	ElementType Type
-	typeID      string
-}
-
-var _ Type = &InclusiveRangeType{}
-
-func NewInclusiveRangeType(
-	elementType Type,
-) *InclusiveRangeType {
-	return &InclusiveRangeType{
-		ElementType: elementType,
-	}
-}
-
-func NewMeteredInclusiveRangeType(
-	gauge common.MemoryGauge,
-	elementType Type,
-) *InclusiveRangeType {
-	common.UseMemory(gauge, common.CadenceInclusiveRangeTypeMemoryUsage)
-	return NewInclusiveRangeType(elementType)
-}
-
-func (*InclusiveRangeType) isType() {}
-
-func (t *InclusiveRangeType) ID() string {
-	if len(t.typeID) == 0 {
-		t.typeID = fmt.Sprintf(
-			"InclusiveRange<%s>",
-			t.ElementType.ID(),
-		)
-	}
-	return t.typeID
-}
-
-func (t *InclusiveRangeType) Equal(other Type) bool {
-	otherType, ok := other.(*InclusiveRangeType)
-	if !ok {
-		return false
-	}
-
-	return t.ElementType.Equal(otherType.ElementType)
-}
-
 // Field
 
 type Field struct {
@@ -1383,15 +1337,82 @@ func NewTypeParameter(
 	}
 }
 
+// StoredAsCompositeType
+
+// A Type that has its own independent sema.Type but uses
+// CompositeValue underneath for storage.
+type StoredAsCompositeType interface {
+	Type
+	CompositeFields() []Field
+	SetCompositeFields([]Field)
+}
+
+// InclusiveRangeType
+
+type InclusiveRangeType struct {
+	ElementType Type
+	typeID      string
+	Fields      []Field
+}
+
+var _ Type = &InclusiveRangeType{}
+var _ StoredAsCompositeType = &InclusiveRangeType{}
+
+func NewInclusiveRangeType(
+	fields []Field,
+) *InclusiveRangeType {
+	return &InclusiveRangeType{
+		Fields: fields,
+	}
+}
+
+func NewMeteredInclusiveRangeType(
+	gauge common.MemoryGauge,
+	fields []Field,
+) *InclusiveRangeType {
+	common.UseMemory(gauge, common.CadenceInclusiveRangeTypeMemoryUsage)
+	return NewInclusiveRangeType(fields)
+}
+
+func (*InclusiveRangeType) isType() {}
+
+func (t *InclusiveRangeType) ID() string {
+	if len(t.typeID) == 0 {
+		t.typeID = fmt.Sprintf(
+			"InclusiveRange<%s>",
+			t.ElementType.ID(),
+		)
+	}
+	return t.typeID
+}
+
+func (*InclusiveRangeType) isCompositeType() {}
+
+func (t *InclusiveRangeType) CompositeFields() []Field {
+	return t.Fields
+}
+
+func (t *InclusiveRangeType) SetCompositeFields(fields []Field) {
+	t.Fields = fields
+}
+
+func (t *InclusiveRangeType) Equal(other Type) bool {
+	otherType, ok := other.(*InclusiveRangeType)
+	if !ok {
+		return false
+	}
+
+	return t.ElementType.Equal(otherType.ElementType)
+}
+
 // CompositeType
 
 type CompositeType interface {
 	Type
+	StoredAsCompositeType
 	isCompositeType()
 	CompositeTypeLocation() common.Location
 	CompositeTypeQualifiedIdentifier() string
-	CompositeFields() []Field
-	SetCompositeFields([]Field)
 	CompositeInitializers() [][]Parameter
 }
 

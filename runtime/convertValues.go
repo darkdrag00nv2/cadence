@@ -382,7 +382,13 @@ func exportCompositeValue(
 
 	compositeType, ok := semaType.(*sema.CompositeType)
 	if !ok {
-		panic(errors.NewUnreachableError())
+		// InclusiveRange is stored as a CompositeValue but isn't a CompositeType.
+		inclusiveRangeType, ok := semaType.(*sema.InclusiveRangeType)
+		if !ok {
+			panic(errors.NewUnreachableError())
+		}
+
+		t := exportInclusiveRangeType(inter, inclusiveRangeType, map[common.TypeID]cadence.Type{})
 	}
 
 	// TODO: consider making the results map "global", by moving it up to exportValueWithInterpreter

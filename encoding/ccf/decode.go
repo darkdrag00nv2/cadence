@@ -507,6 +507,9 @@ func (d *Decoder) decodeValue(t cadence.Type, types *cadenceTypeByCCFTypeID) (ca
 	case *cadence.ResourceType:
 		return d.decodeResource(t, types)
 
+	case *cadence.InclusiveRangeType:
+		return d.decodeInclusiveRange(t, types)
+
 	case *cadence.StructType:
 		return d.decodeStruct(t, types)
 
@@ -1309,6 +1312,31 @@ func (d *Decoder) decodeEnum(typ *cadence.EnumType, types *cadenceTypeByCCFTypeI
 	return v.WithType(typ), nil
 }
 
+// decodeInclusiveRange decodes encoded composite-value as
+// language=CDDL
+// composite-value = [* (field: value)]
+func (d *Decoder) decodeInclusiveRange(typ *cadence.InclusiveRangeType, types *cadenceTypeByCCFTypeID) (cadence.Value, error) {
+	// InclusiveRange is encoded as a composite.
+	fieldValues, err := d.decodeComposite(typ.Fields, types)
+	if err != nil {
+		return nil, err
+	}
+
+	v, err := cadence.NewMeteredInclusiveRange(
+		d.gauge,
+		func() ([]cadence.Value, error) {
+			return fieldValues, nil
+		},
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// typ is already metered at creation.
+	return v.WithType(typ), nil
+}
+
 // decodePath decodes path-value as
 // language=CDDL
 // path-value = [
@@ -1509,6 +1537,9 @@ func (d *Decoder) decodeTypeValue(visited *cadenceTypeByCCFTypeID) (cadence.Type
 	case CBORTagEnumTypeValue:
 		return d.decodeEnumTypeValue(visited)
 
+	case CBORTagInclusiveRangeTypeValue:
+		return d.decodeInclusiveRangeTypeValue(visited)
+
 	case CBORTagStructInterfaceTypeValue:
 		return d.decodeStructInterfaceTypeValue(visited)
 
@@ -1677,6 +1708,33 @@ func (d *Decoder) decodeEnumTypeValue(visited *cadenceTypeByCCFTypeID) (cadence.
 			qualifiedIdentifier,
 			typ,
 			nil,
+			nil,
+		), nil
+	}
+
+	return d.decodeCompositeTypeValue(visited, ctr)
+}
+
+// decodeInclusiveRangeTypeValue decodes inclusiverange-type-value as
+// language=CDDL
+// inclusiverange-type-value =
+//
+//	; cbor-tag-inclusiverange-type-value
+//	#6.213(composite-type-value)
+func (d *Decoder) decodeInclusiveRangeTypeValue(visited *cadenceTypeByCCFTypeID) (cadence.Type, error) {
+	ctr := func(
+		location common.Location,
+		qualifiedIdentifier string,
+		typ cadence.Type,
+	) (cadence.Type, error) {
+		if typ != nil {
+			return nil, fmt.Errorf(
+				"encoded inclusiverange-type-value has type %s (expected nil type)",
+				typ.ID(),
+			)
+		}
+		return cadence.NewMeteredInclusiveRangeType(
+			d.gauge,
 			nil,
 		), nil
 	}
@@ -1871,6 +1929,9 @@ func (d *Decoder) decodeCompositeTypeValue(
 	case *cadence.EnumType:
 		compositeType.Fields = fields
 		compositeType.Initializers = initializers
+
+	case *cadence.InclusiveRangeType:
+		compositeType.Fields = fields
 
 	case *cadence.StructInterfaceType:
 		compositeType.Fields = fields

@@ -222,6 +222,8 @@ func (d *Decoder) decodeJSON(v any) cadence.Value {
 		return d.decodeEvent(valueJSON)
 	case contractTypeStr:
 		return d.decodeContract(valueJSON)
+	case inclusiveRangeTypeStr:
+		return d.decodeInclusiveRange(valueJSON)
 	case pathTypeStr:
 		return d.decodePath(valueJSON)
 	case typeTypeStr:
@@ -866,6 +868,26 @@ func (d *Decoder) decodeEnum(valueJSON any) cadence.Enum {
 	))
 }
 
+func (d *Decoder) decodeInclusiveRange(valueJSON any) cadence.InclusiveRange {
+	comp := d.decodeComposite(valueJSON)
+
+	inclusiveRange, err := cadence.NewMeteredInclusiveRange(
+		d.gauge,
+		func() ([]cadence.Value, error) {
+			return comp.fieldValues, nil
+		},
+	)
+
+	if err != nil {
+		panic(errors.NewDefaultUserError("invalid inclusive range: %w", err))
+	}
+
+	return inclusiveRange.WithType(cadence.NewMeteredInclusiveRangeType(
+		d.gauge,
+		comp.fieldTypes,
+	))
+}
+
 func (d *Decoder) decodePath(valueJSON any) cadence.Path {
 	obj := toObject(valueJSON)
 
@@ -1016,6 +1038,7 @@ func (d *Decoder) decodeNominalType(
 	var result cadence.Type
 	var interfaceType cadence.InterfaceType
 	var compositeType cadence.CompositeType
+	var storedAsCompositeType cadence.StoredAsCompositeType
 
 	switch kind {
 	case "Struct":
@@ -1091,6 +1114,12 @@ func (d *Decoder) decodeNominalType(
 			inits,
 		)
 		result = compositeType
+	case "InclusiveRange":
+		storedAsCompositeType = cadence.NewMeteredInclusiveRangeType(
+			d.gauge,
+			nil,
+		)
+		result = storedAsCompositeType
 	default:
 		panic(errors.NewDefaultUserError("invalid kind: %s", kind))
 	}
