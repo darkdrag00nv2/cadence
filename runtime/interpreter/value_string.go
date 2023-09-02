@@ -26,6 +26,7 @@ import (
 	"github.com/onflow/cadence/runtime/common"
 	"github.com/onflow/cadence/runtime/errors"
 	"github.com/onflow/cadence/runtime/sema"
+	"golang.org/x/text/unicode/norm"
 )
 
 func stringFunctionEncodeHex(invocation Invocation) Value {
@@ -108,6 +109,54 @@ func stringFunctionFromCharacters(invocation Invocation) Value {
 	return NewUnmeteredStringValue(builder.String())
 }
 
+func normalizeString(str string) string {
+	return norm.NFC.String(str)
+}
+
+func stringFunctionSplit(invocation Invocation) Value {
+	s, ok := invocation.Arguments[0].(*StringValue)
+	if !ok {
+		panic(errors.NewUnreachableError())
+	}
+
+	inter := invocation.Interpreter
+
+	var delimitor *StringValue
+	if len(invocation.Arguments) > 1 {
+		delimitor, ok = invocation.Arguments[1].(*StringValue)
+		if !ok {
+			panic(errors.NewUnreachableError())
+		}
+	} else {
+		delimitor = NewStringValue(
+			inter,
+			common.MemoryUsage{
+				Kind:   common.MemoryKindStringValue,
+				Amount: 1,
+			}, func() string {
+				return ","
+			})
+	}
+
+	normalizedS := s.NormalForm()
+	normalizedDelimitor := delimitor.NormalForm()
+
+	s.prepareGraphemes()
+	for j := 0; j <= s.Length(); j++ {
+		s.graphemes.Next()
+	}
+
+	common.UseMemory(inter,
+		common.MemoryUsage{
+			Kind:   common.MemoryKindStringValue,
+			Amount: 1,
+		},
+	)
+	var builder strings.Builder
+
+	return NewUnmeteredStringValue(builder.String())
+}
+
 // stringFunction is the `String` function. It is stateless, hence it can be re-used across interpreters.
 var stringFunction = func() Value {
 	functionValue := NewUnmeteredHostFunctionValue(
@@ -147,6 +196,14 @@ var stringFunction = func() Value {
 		NewUnmeteredHostFunctionValue(
 			sema.StringTypeFromCharactersFunctionType,
 			stringFunctionFromCharacters,
+		),
+	)
+
+	addMember(
+		sema.StringTypeSplitFunctionName,
+		NewUnmeteredHostFunctionValue(
+			sema.StringTypeSplitFunctionType,
+			stringFunctionSplit,
 		),
 	)
 

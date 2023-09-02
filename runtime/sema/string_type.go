@@ -37,6 +37,11 @@ const StringTypeFromCharactersFunctionDocString = `
 Returns a string from the given array of characters
 `
 
+const StringTypeSplitFunctionName = "split"
+const StringTypeSplitFunctionDocString = `
+Returns a variable-sized array of strings after splitting the string on the delimiter.
+`
+
 // StringType represents the string type
 var StringType = &SimpleType{
 	Name:          "String",
@@ -242,6 +247,13 @@ var StringFunctionType = func() *FunctionType {
 		StringTypeFromCharactersFunctionDocString,
 	))
 
+	addMember(NewUnmeteredPublicFunctionMember(
+		functionType,
+		StringTypeSplitFunctionName,
+		StringTypeSplitFunctionType,
+		StringTypeSplitFunctionDocString,
+	))
+
 	BaseValueActivation.Set(
 		typeName,
 		baseFunctionVariable(
@@ -297,4 +309,26 @@ var StringTypeFromCharactersFunctionType = &FunctionType{
 	ReturnTypeAnnotation: NewTypeAnnotation(
 		StringType,
 	),
+}
+
+var StringTypeSplitFunctionType = &FunctionType{
+	Parameters: []Parameter{
+		{
+			Label:          ArgumentLabelNotRequired,
+			Identifier:     "s",
+			TypeAnnotation: NewTypeAnnotation(StringType),
+		},
+		{
+			Label:          ArgumentLabelNotRequired,
+			Identifier:     "delimiter",
+			TypeAnnotation: NewTypeAnnotation(StringType),
+		},
+	},
+	ReturnTypeAnnotation: NewTypeAnnotation(
+		&VariableSizedType{
+			Type: StringType,
+		},
+	),
+	// delimiter is optional
+	Arity: &Arity{Min: 1, Max: 2},
 }
