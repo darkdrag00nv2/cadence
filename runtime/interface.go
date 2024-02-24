@@ -153,6 +153,9 @@ type MeterInterface interface {
 	// MeterComputation is a callback method for metering computation, it returns error
 	// when computation passes the limit (set by the environment)
 	MeterComputation(operationType common.ComputationKind, intensity uint) error
+	// RemainingComputation returns the remaining computation for the operation type
+	// in the current runtime.
+	RemainingComputation(operationType common.ComputationKind) (uint64, error)
 	// ComputationUsed returns the total computation used in the current runtime.
 	ComputationUsed() (uint64, error)
 	// MemoryUsed returns the total memory (estimate) used in the current runtime.

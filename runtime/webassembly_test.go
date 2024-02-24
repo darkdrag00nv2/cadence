@@ -71,6 +71,7 @@ func TestRuntimeWebAssemblyAdd(t *testing.T) {
     `)
 
 	var webAssemblyFuelComputationMeterings []uint
+	webAssemblyFuelComputation := uint64(1000)
 
 	runtimeInterface := &TestRuntimeInterface{
 		Storage: NewTestLedger(nil, nil),
@@ -90,7 +91,16 @@ func TestRuntimeWebAssemblyAdd(t *testing.T) {
 				intensity,
 			)
 
+			webAssemblyFuelComputation -= uint64(intensity)
+
 			return nil
+		},
+		OnRemainingComputation: func(compKind common.ComputationKind) (uint64, error) {
+			if compKind != common.ComputationKindWebAssemblyFuel {
+				return 0, nil
+			}
+
+			return webAssemblyFuelComputation, nil
 		},
 	}
 
@@ -118,6 +128,7 @@ func TestRuntimeWebAssemblyAdd(t *testing.T) {
 		[]uint{4, 4},
 		webAssemblyFuelComputationMeterings,
 	)
+	assert.Equal(t, uint64(992), webAssemblyFuelComputation)
 }
 
 func TestRuntimeWebAssemblyDisabled(t *testing.T) {

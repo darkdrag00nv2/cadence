@@ -77,14 +77,15 @@ type TestRuntimeInterface struct {
 		oldAddress common.Address,
 		newAddress common.Address,
 	)
-	OnGenerateUUID       func() (uint64, error)
-	OnMeterComputation   func(compKind common.ComputationKind, intensity uint) error
-	OnDecodeArgument     func(b []byte, t cadence.Type) (cadence.Value, error)
-	OnProgramParsed      func(location runtime.Location, duration time.Duration)
-	OnProgramChecked     func(location runtime.Location, duration time.Duration)
-	OnProgramInterpreted func(location runtime.Location, duration time.Duration)
-	OnReadRandom         func([]byte) error
-	OnVerifySignature    func(
+	OnGenerateUUID         func() (uint64, error)
+	OnMeterComputation     func(compKind common.ComputationKind, intensity uint) error
+	OnRemainingComputation func(compKind common.ComputationKind) (uint64, error)
+	OnDecodeArgument       func(b []byte, t cadence.Type) (cadence.Value, error)
+	OnProgramParsed        func(location runtime.Location, duration time.Duration)
+	OnProgramChecked       func(location runtime.Location, duration time.Duration)
+	OnProgramInterpreted   func(location runtime.Location, duration time.Duration)
+	OnReadRandom           func([]byte) error
+	OnVerifySignature      func(
 		signature []byte,
 		tag string,
 		signedData []byte,
@@ -355,6 +356,13 @@ func (i *TestRuntimeInterface) MeterComputation(compKind common.ComputationKind,
 		return nil
 	}
 	return i.OnMeterComputation(compKind, intensity)
+}
+
+func (i *TestRuntimeInterface) RemainingComputation(operationType common.ComputationKind) (uint64, error) {
+	if i.OnRemainingComputation == nil {
+		return 0, nil
+	}
+	return i.OnRemainingComputation(operationType)
 }
 
 func (i *TestRuntimeInterface) DecodeArgument(b []byte, t cadence.Type) (cadence.Value, error) {

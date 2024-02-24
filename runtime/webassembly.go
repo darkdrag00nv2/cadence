@@ -188,11 +188,8 @@ func newWasmtimeFunctionWebAssemblyExport(
 			// Call the function, with metering
 
 			fuelConsumedBefore, _ := store.FuelConsumed()
-
-			// TODO: get remaining computation and convert to fuel.
-			//   needs e.g. invocation.Interpreter.RemainingComputation()
-			const todoAvailableFuel = 1000
-			err := store.AddFuel(todoAvailableFuel)
+			availableFuel := inter.RemainingComputation(common.ComputationKindWebAssemblyFuel)
+			err := store.AddFuel(availableFuel)
 			if err != nil {
 				// TODO: wrap error
 				panic(err)
