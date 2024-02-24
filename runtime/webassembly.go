@@ -38,9 +38,13 @@ type WasmtimeWebAssemblyModule struct {
 func NewWasmtimeWebAssemblyModule(bytes []byte) (stdlib.WebAssemblyModule, error) {
 	config := wasmtime.NewConfig()
 	config.SetConsumeFuel(true)
+	config.SetMaxWasmStack(1024 * 1024) // 1 MiB
 
 	engine := wasmtime.NewEngineWithConfig(config)
 	store := wasmtime.NewStore(engine)
+	// TODO: Determine sane limits for linear memory, # elements in tables,
+	// # instances, # tables and # linear memories.
+	store.Limiter(-1, -1, -1, -1, -1)
 
 	module, err := wasmtime.NewModule(engine, bytes)
 	if err != nil {
